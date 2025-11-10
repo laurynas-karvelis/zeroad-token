@@ -1,5 +1,5 @@
 import { CLIENT_HEADERS, ClientHeaderParseResult, PROTOCOL_VERSION, SITE_FEATURES } from "../constants";
-import { bytesToUnixTimestamp, fromBase64, hasFeature, toBase64, unixTimestampToBytes } from "../helpers";
+import { bytesToUnixTimestamp, fromBase64, hasFeature, setFeatures, toBase64, unixTimestampToBytes } from "../helpers";
 import { importPrivateKey, importPublicKey, nonce, sign, verify } from "../subtle.crypto";
 
 const NONCE_BYTES = 4;
@@ -19,9 +19,10 @@ export class ClientHeader {
     this.privateKey = privateKey;
   }
 
-  async encode(version: PROTOCOL_VERSION, expiresAt: Date, flags: number) {
+  async encode(version: PROTOCOL_VERSION, expiresAt: Date, features: SITE_FEATURES[]) {
     if (!this.privateKey) throw new Error("Private key is required");
 
+    const flags = setFeatures(0, features);
     const data = mergeByteArrays([
       new Uint8Array([version]),
       nonce(NONCE_BYTES),
