@@ -59,7 +59,7 @@ const port = 3000;
 const ZERO_AD_PARTNER_HEADER_VALUE = "AZqnKU56eIC7vCD1PPlwhg^1^3";
 
 // Initialize your Zero Ad Network module
-init(ZERO_AD_PARTNER_HEADER_VALUE);
+init({ value: ZERO_AD_PARTNER_HEADER_VALUE });
 
 app
     .use((req, res, next) => {
