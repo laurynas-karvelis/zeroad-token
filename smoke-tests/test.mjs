@@ -8,6 +8,7 @@ import {
   SITE_FEATURES,
   SERVER_HEADERS,
   CLIENT_HEADERS,
+  PROTOCOL_VERSION,
 } from "../dist/index.mjs";
 
 (async () => {
@@ -24,7 +25,7 @@ import {
 
   assert.deepEqual(result.data, {
     expiresAt: new Date("2025-07-28T09:59:38.000Z"),
-    version: constants.PROTOCOL_VERSION.V_1,
+    version: PROTOCOL_VERSION.V_1,
     expired: true,
     flags: 7,
   });
