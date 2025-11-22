@@ -42,7 +42,7 @@ app.addHook("onRequest", async (request, reply) => {
 // -----------------------------------------------------------------------------
 // Routes
 // -----------------------------------------------------------------------------
-app.get("/", async (request, reply) => {
+app.get("/", async (request) => {
   return {
     message: "OK",
     tokenContext: request.tokenContext,

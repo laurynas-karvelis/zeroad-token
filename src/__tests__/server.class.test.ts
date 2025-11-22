@@ -26,8 +26,8 @@ describe("ServerHeader class", () => {
 
   test("should parse as undefined on an invalid header value", () => {
     expect(ServerHeader.decode("")).toBeUndefined();
-    expect(ServerHeader.decode(null as any)).toBeUndefined();
-    expect(ServerHeader.decode(undefined as any)).toBeUndefined();
+    expect(ServerHeader.decode(null as never)).toBeUndefined();
+    expect(ServerHeader.decode(undefined as never)).toBeUndefined();
     expect(ServerHeader.decode("1^1")).toBeUndefined();
 
     expect(ServerHeader.decode("ZBhyPJ1VS5W5zrxNvf/IE^1^1")).toBeUndefined();

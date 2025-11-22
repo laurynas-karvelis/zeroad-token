@@ -1,7 +1,7 @@
 import { SITE_FEATURES, UUID } from "./constants";
 
 export const toBase64 = (data: Uint8Array) => {
-  if (typeof (data as any).toBase64 === "function") return (data as any).toBase64() as string;
+  if (typeof data.toBase64 === "function") return data.toBase64() as string;
   if (typeof Buffer !== "undefined") return Buffer.from(data).toString("base64") as string;
 
   if (typeof btoa === "function") {
@@ -16,7 +16,7 @@ export const toBase64 = (data: Uint8Array) => {
 };
 
 export const fromBase64 = (input: string) => {
-  if (typeof (Uint8Array as any).fromBase64 === "function") return (Uint8Array as any).fromBase64(input) as Uint8Array;
+  if (typeof Uint8Array.fromBase64 === "function") return Uint8Array.fromBase64(input) as Uint8Array;
   if (typeof Buffer !== "undefined") return new Uint8Array(Buffer.from(input, "base64"));
 
   if (typeof atob === "function") {
@@ -73,7 +73,7 @@ export const bytesToUnixTimestamp = (bytes: Uint8Array) => {
   return new Date(u32int * 1000);
 };
 
-export const assert = (value: any, message: string) => {
+export const assert = (value: unknown, message: string) => {
   if (!value) throw new Error(message);
 };
 
