@@ -42,7 +42,6 @@ const app = express();
 app.use(tokenMiddleware);
 
 app.get("/", (req, res) => {
-  console.log(req.tokenContext);
   // req.tokenContext is available here
   res.json({
     message: "OK",
