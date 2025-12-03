@@ -51,7 +51,7 @@ Parsed token result example:
 
 User's token payload verification is done locally within your app and no data leaves your server.
 
-When a token is present, parsing and token integrity verification will roughly add between `0.06ms` to `0.6ms` to the total endpoint execution time (as per testing done on a M1 MacBook Pro). Your mileage will vary depending on your hardware, but the impact should stay minimal.
+When a token is present, parsing and token integrity verification will roughly add between `0.06ms` and `0.6ms` to the total endpoint execution time (as per testing done on a M1 MacBook Pro). Your mileage will vary depending on your hardware, but the impact should stay minimal.
 
 As per our exploratory test results in attempts to cache the token and its parsed results in Redis - it takes longer to retrieve the cached result than to verify token payload integrity.
 
