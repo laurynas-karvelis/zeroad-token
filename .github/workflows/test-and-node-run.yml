@@ -1,4 +1,4 @@
-name: Test and Node Compatibility
+name: Unit & Smoke tests
 
 on:
   push:
@@ -94,7 +94,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        deno-version: ["1.45.0", "1.46.0", "2.0.0", "2.1.0", "2.5.6"]
+        deno-version: ["2.0.0", "2.1.0", "2.2.0", "2.4.0", "2.5.6"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
