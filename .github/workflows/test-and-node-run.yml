@@ -51,12 +51,12 @@ jobs:
       - name: Run .mjs file
         run: |
           echo "Running ESM import test on ${{ matrix.node-version }}"
-          node run smoke-tests/import.test.mjs
+          node smoke-tests/import.test.mjs
 
       - name: Run .cjs file
         run: |
           echo "Running CJS require test on ${{ matrix.node-version }}"
-          node run smoke-tests/require.test.cjs
+          node smoke-tests/require.test.cjs
 
   bun-smoke-tests:
     runs-on: ubuntu-latest
@@ -94,7 +94,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        deno-version: ["1.0.0", "1.8.0", "1.34.3", "1.44.3", "2.0.0", "2.1.0", "2.5.6"]
+        deno-version: ["1.0.0", "1.1.0", "1.5.0", "1.8.0", "1.34.3", "1.44.3", "2.0.0", "2.1.0", "2.5.6"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -123,4 +123,4 @@ jobs:
       - name: Run .cjs file
         run: |
           echo "Running CJS require test on ${{ matrix.deno-version }}"
-          deno run smoke-tests/require.test.cjs
+          deno run --allow-read smoke-tests/require.test.cjs
