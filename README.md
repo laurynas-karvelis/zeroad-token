@@ -8,7 +8,7 @@ You will find the official Zero Ad Network documentation at [docs.zeroad.network
 
 | Runtime | Compatibility | ESM | CJS |
 | :------ | :------------ | :-: | :-: |
-| Node.js | 18+           | ✅  | ✅  |
+| Node.js | 16+           | ✅  | ✅  |
 | Bun     | 1.1.0+        | ✅  | ✅  |
 | Deno    | 2.0.0+        | ✅  | ✅  |
 
