@@ -4,12 +4,12 @@ import { Context, Hono, Next } from "hono";
 import { Site, FEATURES } from "@zeroad.network/token";
 
 /**
- * Module initialization (done once on startup)
+ * Module initialization (once at startup)
  *
- * You can provide your site's "Welcome Header" value, for example, by passing in a process.env variable:
+ * Option 1: Provide the pre-generated "Welcome Header" value, e.g., via process.env:
  *   const site = Site(process.env.ZERO_AD_NETWORK_WELCOME_HEADER_VALUE);
  *
- * Or by passing in an options object to announce your site feature list, like this:
+ * Option 2: Pass an options object to define your site's feature list:
  *   const site = Site({
  *     siteId: 'd867b6ff-cb12-4363-be54-db4cec523235',
  *     features: [FEATURES.ADS_OFF, FEATURES.COOKIE_CONSENT_OFF, FEATURES.MARKETING_DIALOG_OFF]
@@ -17,30 +17,29 @@ import { Site, FEATURES } from "@zeroad.network/token";
  */
 
 const site = Site({
-  // for demo purposes lets generate a siteId UUID value for now
+  // For demo purposes, we'll generate a siteId UUID
   siteId: randomUUID(),
-  // and specify a list of site supported features
+  // Specify supported site features
   features: [FEATURES.ADS_OFF, FEATURES.COOKIE_CONSENT_OFF, FEATURES.MARKETING_DIALOG_OFF],
 });
 
 // -----------------------------------------------------------------------------
-// Hono app
+// Hono app setup
 // -----------------------------------------------------------------------------
 type TokenContext = ReturnType<typeof site.parseToken>;
-
 const app = new Hono<{ Variables: { tokenContext: TokenContext } }>();
 
 // -----------------------------------------------------------------------------
 // Middleware
 // -----------------------------------------------------------------------------
 app.use("*", async (c: Context, next: Next) => {
-  // Inject server header into every response
+  // Inject "X-Better-Web-Welcome" server header into every response
   c.header(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE);
 
-  // Process request token from incoming client token header value.
+  // Parse incoming user token from client header
   const tokenContext = site.parseToken(c.req.header(site.CLIENT_HEADER_NAME));
 
-  // Attach processed token info to context for downstream usage
+  // Attach parsed token info to context for downstream usage
   c.set("tokenContext", tokenContext);
 
   await next();
@@ -49,10 +48,10 @@ app.use("*", async (c: Context, next: Next) => {
 // -----------------------------------------------------------------------------
 // Routes
 // -----------------------------------------------------------------------------
-
 app.get("/", (c) => {
   const tokenContext = c.get("tokenContext");
 
+  // Render HTML template using tokenContext to display site feature states
   const state = (value: boolean) => (value && '<b style="background: #b0b0b067">YES</b>') || "NO";
   const template = `
     <html>
@@ -77,6 +76,7 @@ app.get("/", (c) => {
 });
 
 app.get("/json", (c) => {
+  // Return JSON response with tokenContext for API usage
   const tokenContext = c.get("tokenContext");
   return c.json({
     message: "OK",
@@ -86,7 +86,7 @@ app.get("/json", (c) => {
 
 // -----------------------------------------------------------------------------
 // Start server (for Bun.js)
-
+// -----------------------------------------------------------------------------
 Bun.serve({ fetch: app.fetch, port: 3000 });
 
 console.log(`Hono server listening at port 3000

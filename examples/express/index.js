@@ -4,12 +4,12 @@ import express from "express";
 import { Site, FEATURES } from "@zeroad.network/token";
 
 /**
- * Module initialization (done once on startup)
+ * Module initialization (once at startup)
  *
- * You can provide your site's "Welcome Header" value, for example, by passing in a process.env variable:
+ * Option 1: Provide the pre-generated "Welcome Header" value, e.g., via process.env:
  *   const site = Site(process.env.ZERO_AD_NETWORK_WELCOME_HEADER_VALUE);
  *
- * Or by passing in an options object to announce your site feature list, like this:
+ * Option 2: Pass an options object to define your site's feature list:
  *   const site = Site({
  *     siteId: 'd867b6ff-cb12-4363-be54-db4cec523235',
  *     features: [FEATURES.ADS_OFF, FEATURES.COOKIE_CONSENT_OFF, FEATURES.MARKETING_DIALOG_OFF]
@@ -17,9 +17,9 @@ import { Site, FEATURES } from "@zeroad.network/token";
  */
 
 const site = Site({
-  // for demo purposes lets generate a siteId UUID value for now
+  // For demo purposes, we'll generate a siteId UUID
   siteId: randomUUID(),
-  // and specify a list of site supported features
+  // Specify supported site features
   features: [FEATURES.ADS_OFF, FEATURES.COOKIE_CONSENT_OFF, FEATURES.MARKETING_DIALOG_OFF],
 });
 
@@ -27,26 +27,27 @@ const site = Site({
 // Middleware
 // -----------------------------------------------------------------------------
 function tokenMiddleware(req, res, next) {
-  // Inject server header into every response.
+  // Inject the "X-Better-Web-Welcome" server header into every response
   res.setHeader(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE);
 
-  // Process request token from incoming client token header value.
-  // And attach processed token info to request for downstream usage.
+  // Parse the incoming user token from the client header
+  // Attach parsed token data to request for downstream use
   req.tokenContext = site.parseToken(req.headers[site.CLIENT_HEADER_NAME]);
 
   next();
 }
 
 // -----------------------------------------------------------------------------
-// Express app
+// Express app setup
 // -----------------------------------------------------------------------------
 const app = express();
 app.use(tokenMiddleware);
 
 app.get("/", (req, res) => {
-  // Example: use tokenContext to render template
+  // Access parsed tokenContext for this request
   const tokenContext = req.tokenContext;
 
+  // Render HTML template using tokenContext to adjust feature display
   const state = (value) => (value && '<b style="background: #b0b0b067">YES</b>') || "NO";
   const template = `
     <html>
@@ -71,13 +72,15 @@ app.get("/", (req, res) => {
 });
 
 app.get("/json", (req, res) => {
-  // req.tokenContext is available here too
+  // Return JSON response with tokenContext for API usage
   res.json({
     message: "OK",
     tokenContext: req.tokenContext,
   });
 });
 
+// -----------------------------------------------------------------------------
+// Start Express server
 // -----------------------------------------------------------------------------
 app.listen(3000, () => {
   console.log(`Express server listening at port 3000

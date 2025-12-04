@@ -1,43 +1,45 @@
 # Introduction
 
-This NPM module is meant to be used by sites participating in [Zero Ad Network](https://zeroad.network) program, that are running in either Node.js, Bun or Deno runtimes.
+This NPM module is designed for sites running Node.js, Bun, or Deno that participate in the [Zero Ad Network](https://zeroad.network) program.
 
-The `@zeroad.network/token` module acts as an HTTP‑header‑based "access / entitlement token" library. It is a lightweight, TypeScript ready, fully open source, well tested and has no production dependencies.
+The `@zeroad.network/token` module is a lightweight, TypeScript-ready, open-source, and fully tested HTTP-header-based "access/entitlement token" library with no production dependencies.
 
-Up-to-date and in depth guides, how-to's and platform implementation details can be found at [the official Zero Ad Network documentation portal](https://docs.zeroad.network).
+For detailed guides and implementation instructions, see the [official Zero Ad Network documentation](https://docs.zeroad.network).
 
-## Runtime compatibility
+## Runtime Compatibility
 
-| Runtime | Compatibility | ESM | CJS |
-| :------ | :------------ | :-: | :-: |
-| Node.js | 16+           | ✅  | ✅  |
-| Bun     | 1.1.0+        | ✅  | ✅  |
-| Deno    | 2.0.0+        | ✅  | ✅  |
+| Runtime | Version | ESM | CJS |
+| :------ | :------ | :-: | :-: |
+| Node.js | 16+     | ✅  | ✅  |
+| Bun     | 1.1.0+  | ✅  | ✅  |
+| Deno    | 2.0.0+  | ✅  | ✅  |
 
 ## Purpose
 
-It helps partnered site developer to:
+The module helps developers to:
 
-- Inject a valid site's HTTP Response Header known as "Welcome Header" to every endpoint. An example:
+- Inject a valid site's HTTP Response Header (**Welcome Header**) into every endpoint. Example:
+
   ```http
   X-Better-Web-Welcome: "AZqnKU56eIC7vCD1PPlwHg^1^3"
   ```
-- Check for Zero Ad Network user's token presence that gets injected as a HTTP Request Header by their browser extension. An example of such Request Header:
+
+- Detect and parse Zero Ad Network user tokens sent via HTTP Request Header. Example:
+
   ```http
   X-Better-Web-Hello: "Aav2IXRoh0oKBw==.2yZfC2/pM9DWfgX+von4IgWLmN9t67HJHLiee/gx4+pFIHHurwkC3PCHT1Kaz0yUhx3crUaxST+XLlRtJYacAQ=="
   ```
-- If found, parse the token from the HTTP Request Header value and verify its integrity.
-- (Optionally) Generate a valid "Welcome Header" value when `siteId` UUID and site `features` array are provided.
 
-## Implementation details
+- Verify token integrity locally.
+- Optionally generate a valid "Welcome Header" when `siteId` and `features` are provided.
 
-The module uses the `node:crypto` runtime module to ensure the user's Request Header payload is valid by verifying its signature for the payload using Zero Ad Network's public ED25519 cryptographic key which is supplied within the module. Then:
+## Implementation Details
 
-- User's token payload is decoded and token's protocol version, expiration timestamp and site's feature list are extracted.
-- A map of the site's features and their toggle states is generated.
-- An expired token will produce a feature list with all flags being set to `false`.
+- Uses `node:crypto` to verify token signatures with Zero Ad Network's public ED25519 key.
+- Decodes token payload to extract protocol version, expiration timestamp, and site features.
+- Generates a feature map; expired tokens produce all flags as `false`.
 
-Parsed token result example:
+Parsed token example:
 
 ```js
 {
@@ -49,27 +51,29 @@ Parsed token result example:
 };
 ```
 
-User's token payload verification is done locally within your app and no data leaves your server.
+- Verification occurs locally; no data leaves your server.
+- Parsing and verification adds roughly 0.06ms–0.6ms to endpoint execution time (tested on M1 MacBook Pro). Performance may vary.
+- Redis caching tests show local verification is faster than retrieving cached results.
 
-When a token is present, parsing and token integrity verification will roughly add between `0.06ms` and `0.6ms` to the total endpoint execution time (as per testing done on a M1 MacBook Pro). Your mileage will vary depending on your hardware, but the impact should stay minimal.
+## Benefits of Joining
 
-As per our exploratory test results in attempts to cache the token and its parsed results in Redis - it takes longer to retrieve the cached result than to verify token payload integrity.
+Partnering with Zero Ad Network allows your site to:
 
-## Why to join
+- Generate a new revenue stream
+- Provide a clean, unobstructed user experience
+- Contribute to a more joyful, user-friendly internet
 
-By partnering with Zero Ad Network your site establishes a new stream of revenue enabling you to provide a tangible and meaningful value while simultaneously providing a pure, clean and unobstructed site UI that everyone loves.
+## Onboarding Your Site
 
-With every new site joining us, it becomes easier to reshape the internet closer to its original intention - a joyful and wonderful experience for everyone.
+1. [Sign up](https://zeroad.network/login) with Zero Ad Network.
+2. [Register your site](https://zeroad.network/publisher/sites/add) to receive your unique `X-Better-Web-Welcome` header.
 
-## Onboard your site
+Your site must include this header on all publicly accessible HTML or RESTful endpoints so that Zero Ad Network users’ browser extensions can recognize participation.
 
-To register your site, [sign up](https://zeroad.network/login) with Zero Ad Network and [register your site](https://zeroad.network/publisher/sites/add). On the second step of the Site registration process you'll be provided with your unique `X-Better-Web-Welcome` header value.
+## Module Installation
 
-If you decide for your site to participate in the Zero Ad Network program, then it must respond with this header at all times on every publicly accessible endpoint containing HTML or RESTful response. When Zero Ad Network users visit your site, this allows their browser extension to know your site is participating in the program.
-
-## Module installation
-
-Great news for TypeScript enjoyers, the module is written purely in TypeScript, hence all types and interfaces are readily available. The module works well in EcmaScript (`import {} from ""`) and CommonJS `const {} = require("")` environments. If unsure - prefer ESM when possible.
+- Written entirely in TypeScript with full types and interfaces.
+- Supports both ESM (`import`) and CommonJS (`require`). ESM is recommended when possible.
 
 To install the module use your favourite package manager:
 
@@ -92,15 +96,15 @@ deno add npm:@zeroad.network/token
 
 ## Examples
 
-To find more example implementations for `Express.js` (JavaScript), `Hono` and `Fastify` (both TypeScript), please go to [examples section on our Github repository](https://github.com/laurynas-karvelis/zeroad-token-ts/tree/main/examples/).
+For more example implementations using `Express.js` (JavaScript), `Hono`, and `Fastify` (TypeScript), visit the [examples section on our GitHub repository](https://github.com/laurynas-karvelis/zeroad-token-typescript/tree/main/examples/).
 
-Take this JavaScript example as a quick reference. The example will show how to:
+The following JavaScript example provides a quick reference, demonstrating how to:
 
-- Inject the "Welcome Header" into each response;
-- Parse user's token from their request header;
-- Use the `tokenContext` value later in your controllers and templates.
+- Inject the "Welcome Header" into responses
+- Parse the user's token from the request header
+- Use the `tokenContext` in controllers and templates
 
-An Express.js v.5 example of a minimal app:
+Minimal Express.js v5 app example:
 
 ```js
 import express from "express";
@@ -108,42 +112,42 @@ import { Site } from "@zeroad.network/token";
 
 const app = express();
 
-// Initialize your Zero Ad Network module once at startup.
-// "Welcome Header" value is acquired during Site's registration process at Zero Ad Network platform (see https://zeroad.network).
+// Initialize the Zero Ad Network module at app startup.
+// The "Welcome Header" value is obtained during site registration on the Zero Ad Network platform (https://zeroad.network).
 const ZERO_AD_NETWORK_WELCOME_HEADER_VALUE = "AZqnKU56eIC7vCD1PPlwHg^1^3";
 const site = Site(ZERO_AD_NETWORK_WELCOME_HEADER_VALUE);
 
 app
-  // Your middleware
+  // Apply middleware for all routes
   .use((req, res, next) => {
-    // Inject "X-Better-Web-Welcome" header
+    // Inject the "X-Better-Web-Welcome" header into the response
     res.set(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE);
 
-    // Parse the request token from incoming client token header value.
-    // And attach parsed info to request object for downstream usage.
-    req.tokenContext = site.parseToken(req.get[site.CLIENT_HEADER_NAME]);
+    // Parse the incoming user token from the request header
+    // Attach the parsed token data to the request object for downstream use
+    req.tokenContext = site.parseToken(req.get(site.CLIENT_HEADER_NAME));
 
     next();
   })
   .get("/", (req, res) => {
-    // If you would print it's contents:
+    // Access parsed token data for this request
     console.log(req.tokenContext);
 
-    // This will produce:
+    // Example structure of tokenContext:
     req.tokenContext = {
-      // If set to true: Render no advertisements anywhere on the page
+      // If true: Hide advertisements on the page
       ADS_OFF: boolean,
-      // If set to true: Render no Cookie Consent screens (headers, footers or dialogs) on the page with complete OPT-OUT for non-functional trackers
+      // If true: Hide Cookie Consent screens and opt out non-functional trackers
       COOKIE_CONSENT_OFF: boolean,
-      // If set to true: Render no marketing dialogs or popups such as newsletter, promotion etc. on the page
+      // If true: Hide marketing dialogs or popups (e.g., newsletter, promotions)
       MARKETING_DIALOG_OFF: boolean,
-      // If set to true: Provide automatic access to otherwise paywalled content such as articles, news etc.
+      // If true: Provide automatic access to paywalled content
       CONTENT_PAYWALL_OFF: boolean,
-      // If set to true: Provide automatic access to site features provided behind a SaaS at least the basic subscription plan
+      // If true: Provide access to site features behind SaaS subscription (at least basic plan)
       SUBSCRIPTION_ACCESS_ON: boolean,
     };
 
-    // In your template adjust your content depending on tokenContext values
+    // Adjust content in your templates based on tokenContext values
     res.render("index.ejs", { tokenContext });
   });
 

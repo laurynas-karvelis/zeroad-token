@@ -1,19 +1,22 @@
 /**
- * This is an official ZeroAd Network public key.
- * Used to verify `X-Better-Web-User` header values are not tampered with.
+ * Official Zero Ad Network public key.
+ * Used to verify that `X-Better-Web-Hello` header values are authentic
+ * and have not been tampered with.
  */
 export const ZEROAD_NETWORK_PUBLIC_KEY: string = "MCowBQYDK2VwAyEAignXRaTQtxEDl4ThULucKNQKEEO2Lo5bEO8qKwjSDVs=";
 
 export enum FEATURES {
-  /** Render no advertisements anywhere on the page */
+  /** Disable all advertisements on the page */
   ADS_OFF = 1 << 0,
-  /** Render no Cookie Consent screens (headers, footers or dialogs) on the page with complete OPT-OUT for non-functional trackers */
+  /** Disable all Cookie Consent screens (headers, footers, or dialogs)
+      and fully opt out of non-functional trackers */
   COOKIE_CONSENT_OFF = 1 << 1,
-  /** Render no marketing dialogs or popups such as newsletter, promotion etc. on the page */
+  /** Disable all marketing dialogs or popups (e.g., newsletters, promotions) */
   MARKETING_DIALOG_OFF = 1 << 2,
-  /** Provide automatic access to otherwise paywalled content such as articles, news etc. */
+  /** Provide automatic access to content that is normally paywalled */
   CONTENT_PAYWALL_OFF = 1 << 3,
-  /** Provide automatic access to site features provided behind a SaaS at least the basic subscription plan */
+  /** Grant automatic access to site features behind a SaaS, 
+      at least the basic subscription plan */
   SUBSCRIPTION_ACCESS_ON = 1 << 4,
 }
 

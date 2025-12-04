@@ -4,12 +4,12 @@ import Fastify from "fastify";
 import { Site, FEATURES } from "@zeroad.network/token";
 
 /**
- * Module initialization (done once on startup)
+ * Module initialization (once at startup)
  *
- * You can provide your site's "Welcome Header" value, for example, by passing in a process.env variable:
+ * Option 1: Provide the pre-generated "Welcome Header" value, e.g., via process.env:
  *   const site = Site(process.env.ZERO_AD_NETWORK_WELCOME_HEADER_VALUE);
  *
- * Or by passing in an options object to announce your site feature list, like this:
+ * Option 2: Pass an options object to define your site's feature list:
  *   const site = Site({
  *     siteId: 'd867b6ff-cb12-4363-be54-db4cec523235',
  *     features: [FEATURES.ADS_OFF, FEATURES.COOKIE_CONSENT_OFF, FEATURES.MARKETING_DIALOG_OFF]
@@ -17,17 +17,18 @@ import { Site, FEATURES } from "@zeroad.network/token";
  */
 
 const site = Site({
-  // for demo purposes lets generate a siteId UUID value for now
+  // For demo purposes, we'll generate a siteId UUID
   siteId: randomUUID(),
-  // and specify a list of site supported features
+  // Specify supported site features
   features: [FEATURES.ADS_OFF, FEATURES.COOKIE_CONSENT_OFF, FEATURES.MARKETING_DIALOG_OFF],
 });
 
 // -----------------------------------------------------------------------------
-// Fastify app
+// Fastify app setup
 // -----------------------------------------------------------------------------
 const app = Fastify();
 
+// Extend FastifyRequest interface to include tokenContext
 declare module "fastify" {
   interface FastifyRequest {
     tokenContext: ReturnType<typeof site.parseToken>;
@@ -38,22 +39,22 @@ declare module "fastify" {
 // Middleware (Fastify hook)
 // -----------------------------------------------------------------------------
 app.addHook("onRequest", async (request, reply) => {
-  // Inject server header into every response
+  // Inject the "X-Better-Web-Welcome" server header into every response
   reply.header(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE);
 
-  // Process request token from incoming client token header value.
-  // And attach processed token info to request for downstream usage.
+  // Parse incoming user token from client header
+  // Attach parsed token data to request for downstream use
   request.tokenContext = site.parseToken(request.headers[site.CLIENT_HEADER_NAME]);
 });
 
 // -----------------------------------------------------------------------------
 // Routes
 // -----------------------------------------------------------------------------
-
 app.get("/", async (request, reply) => {
-  // Example: use tokenContext to render template
+  // Access parsed tokenContext for this request
   const tokenContext = request.tokenContext;
 
+  // Render HTML template using tokenContext to display site feature states
   const state = (value: boolean) => (value && '<b style="background: #b0b0b067">YES</b>') || "NO";
   const template = `
     <html>
@@ -78,6 +79,7 @@ app.get("/", async (request, reply) => {
 });
 
 app.get("/json", async (request) => {
+  // Return JSON response with tokenContext for API usage
   return {
     message: "OK",
     tokenContext: request.tokenContext,
@@ -85,7 +87,7 @@ app.get("/json", async (request) => {
 });
 
 // -----------------------------------------------------------------------------
-// Start server
+// Start Fastify server
 // -----------------------------------------------------------------------------
 app.listen({ port: 3000 }, () => {
   console.log(`Fastify server listening at port 3000
