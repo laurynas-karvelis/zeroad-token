@@ -1,9 +1,7 @@
-import { FEATURES, UUID } from "./constants";
+import { FEATURES } from "./constants";
 
 type SiteFeaturesNative = [keyof typeof FEATURES, FEATURES][];
 let SITE_FEATURES_NATIVE: SiteFeaturesNative;
-
-export const isObject = (value: unknown) => typeof value === "object" && value !== null && !Array.isArray(value);
 
 export const getSiteFeaturesNative = (): SiteFeaturesNative => {
   if (SITE_FEATURES_NATIVE?.length) return SITE_FEATURES_NATIVE;
@@ -42,43 +40,9 @@ export const fromBase64 = (input: string) => {
   throw new Error("Base64 decoding not supported in this environment");
 };
 
-export const uuidToBase64 = (uuid: UUID): string => {
-  const hex = uuid.replace(/-/g, "");
-
-  if (hex.length !== 32) throw new Error("Invalid UUID format");
-
-  const bytes = new Uint8Array(16);
-  for (let i = 0; i < 16; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
-  }
-
-  return toBase64(bytes).replace(/=+$/, "");
-};
-
-export const base64ToUuid = (input: string): string => {
-  const bytes = fromBase64(input + "===".slice((input.length + 3) % 4));
-
-  if (bytes.length !== 16) throw new Error("Invalid byte length for UUID");
-
-  const hex = Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  return [
-    hex.slice(0, 8),
-    hex.slice(8, 8 + 4),
-    hex.slice(12, 12 + 4),
-    hex.slice(16, 16 + 4),
-    hex.slice(20, 20 + 12),
-  ].join("-");
-};
-
 export const assert = (value: unknown, message: string) => {
   if (!value) throw new Error(message);
 };
 
-export const hasFeature = (flags: number, feature: FEATURES) => Boolean(flags & feature);
-export const clearFeature = (flags: number, feature: FEATURES) => (flags &= ~feature);
-export const toggleFeature = (flags: number, feature: FEATURES) => (flags ^= feature);
-export const setFeatures = (flags: number = 0, features: FEATURES[] = []) =>
-  (flags |= features.reduce((acc, feature) => acc | feature, flags || 0));
+export const hasFlag = (flag: number, flags: number) => Boolean(flag & flags);
+export const setFlags = (features: FEATURES[] = []) => features.reduce((acc, feature) => acc | feature, 0);
