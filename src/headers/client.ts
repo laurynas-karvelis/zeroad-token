@@ -1,6 +1,6 @@
 import { PROTOCOL_VERSION, FEATURES } from "../constants";
 import { fromBase64, getSiteFeaturesNative, hasFlag, setFlags, toBase64 } from "../helpers";
-import { KeyObject, nonce, sign, verify } from "../crypto";
+import { nonce, sign, verify } from "../crypto";
 import { log } from "../logger";
 
 const VERSION_BYTES = 1;
@@ -20,7 +20,7 @@ export type FEATURE_FLAG =
 export type ClientHeaderValue = string | string[] | undefined;
 export type FeatureFlags = Record<FEATURE_FLAG, boolean>;
 
-export function parseClientToken(headerValue: ClientHeaderValue, clientId: string, publicKey: KeyObject): FeatureFlags {
+export function parseClientToken(headerValue: ClientHeaderValue, clientId: string, publicKey: string): FeatureFlags {
   const headerValueAsString = Array.isArray(headerValue) ? headerValue[0] : headerValue;
   const data = decodeClientHeader(headerValueAsString, publicKey);
 
@@ -55,7 +55,7 @@ export type DecodedClientHeader = {
 
 export function decodeClientHeader(
   headerValue: string | undefined,
-  publicKey: KeyObject
+  publicKey: string
 ): DecodedClientHeader | undefined {
   if (!headerValue?.length) return;
 
@@ -91,7 +91,7 @@ export function decodeClientHeader(
 
 type EncodeData = { version: PROTOCOL_VERSION; expiresAt: Date; features: FEATURES[]; clientId?: string };
 
-export function encodeClientHeader(data: EncodeData, privateKey: KeyObject) {
+export function encodeClientHeader(data: EncodeData, privateKey: string) {
   const payload = mergeByteArrays([
     new Uint8Array([data.version]),
     new Uint8Array(nonce(NONCE_BYTES)),

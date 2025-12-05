@@ -6,9 +6,10 @@ import {
   verify as nodeVerify,
   randomBytes,
   generateKeyPairSync,
+  KeyObject,
 } from "node:crypto";
 
-export { KeyObject } from "node:crypto";
+const keyCache = new Map<string, KeyObject>();
 
 export const generateKeys = () => {
   const { publicKey, privateKey } = generateKeyPairSync("ed25519");
@@ -22,33 +23,40 @@ export const generateKeys = () => {
   };
 };
 
-export const importPrivateKey = (privateKeyBase64: string) => {
-  const keyBuffer = Buffer.from(privateKeyBase64, "base64");
-  return createPrivateKey({
-    key: keyBuffer,
+const importPrivateKey = (privateKeyBase64: string) => {
+  if (keyCache.has(privateKeyBase64)) return keyCache.get(privateKeyBase64) as KeyObject;
+
+  const key = createPrivateKey({
+    key: Buffer.from(privateKeyBase64, "base64"),
     format: "der",
     type: "pkcs8",
   });
+
+  keyCache.set(privateKeyBase64, key);
+  return key;
 };
 
-export const importPublicKey = (publicKeyBase64: string) => {
-  const keyBuffer = Buffer.from(publicKeyBase64, "base64");
-  return createPublicKey({
-    key: keyBuffer,
+const importPublicKey = (publicKeyBase64: string) => {
+  if (keyCache.has(publicKeyBase64)) return keyCache.get(publicKeyBase64) as KeyObject;
+
+  const key = createPublicKey({
+    key: Buffer.from(publicKeyBase64, "base64"),
     format: "der",
     type: "spki",
   });
+
+  keyCache.set(publicKeyBase64, key);
+  return key;
 };
 
-export const sign = (data: ArrayBuffer, privateKey: ReturnType<typeof importPrivateKey>) => {
-  const buffer = Buffer.from(data);
-  return nodeSign(null, buffer, privateKey);
+export const sign = (data: ArrayBuffer, privateKey: string) => {
+  const key = importPrivateKey(privateKey);
+  return nodeSign(null, Buffer.from(data), key);
 };
 
-export const verify = (data: ArrayBuffer, signature: ArrayBuffer, publicKey: ReturnType<typeof importPublicKey>) => {
-  const dataBuffer = Buffer.from(data);
-  const sigBuffer = Buffer.from(signature);
-  return nodeVerify(null, dataBuffer, publicKey, sigBuffer);
+export const verify = (data: ArrayBuffer, signature: ArrayBuffer, publicKey: string) => {
+  const key = importPublicKey(publicKey);
+  return nodeVerify(null, Buffer.from(data), key, Buffer.from(signature));
 };
 
 export const nonce = (size: number) => new Uint8Array(randomBytes(size));

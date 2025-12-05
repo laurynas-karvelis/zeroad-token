@@ -1,20 +1,27 @@
 import { randomUUID } from "crypto";
-import { describe, test, expect, beforeEach } from "bun:test";
-import { generateKeys, importPrivateKey, KeyObject } from "../crypto";
-import { CLIENT_HEADERS, CURRENT_PROTOCOL_VERSION, FEATURES, SERVER_HEADERS } from "../constants";
+import { describe, test, expect, beforeEach, spyOn } from "bun:test";
+import { generateKeys } from "../crypto";
+import {
+  CLIENT_HEADERS,
+  CURRENT_PROTOCOL_VERSION,
+  FEATURES,
+  SERVER_HEADERS,
+  ZEROAD_NETWORK_PUBLIC_KEY,
+} from "../constants";
 import { encodeClientHeader } from "../headers/client";
+import * as clientHeader from "../headers/client";
 import { Site } from "../site";
 
 describe("Site()", () => {
-  let privateKey: KeyObject;
+  let privateKey: string;
   let publicKey: string;
   let clientId: string;
 
   beforeEach(() => {
-    const { publicKey: publicKeyB64, privateKey: privateKeyB64 } = generateKeys();
+    const keys = generateKeys();
 
-    privateKey = importPrivateKey(privateKeyB64);
-    publicKey = publicKeyB64;
+    privateKey = keys.privateKey;
+    publicKey = keys.publicKey;
 
     clientId = randomUUID();
   });
@@ -31,8 +38,8 @@ describe("Site()", () => {
     expect(site.CLIENT_HEADER_NAME).toEqual(CLIENT_HEADERS.HELLO);
   });
 
-  test("should parse client header data correctly with the official public key", () => {
-    const site = Site({ clientId, features: [FEATURES.CLEAN_WEB, FEATURES.ONE_PASS], _publicKey: publicKey });
+  test("should call parseClientToken() correctly", () => {
+    const site = Site({ clientId, features: [FEATURES.CLEAN_WEB, FEATURES.ONE_PASS] });
 
     const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
     const clientHeaderValue = encodeClientHeader(
@@ -40,14 +47,19 @@ describe("Site()", () => {
       privateKey
     );
 
+    spyOn(clientHeader, "parseClientToken");
     const tokenContext = site.parseClientToken(clientHeaderValue);
+
+    expect(clientHeader.parseClientToken).toHaveBeenCalledTimes(1);
+    expect(clientHeader.parseClientToken).toHaveBeenCalledWith(clientHeaderValue, clientId, ZEROAD_NETWORK_PUBLIC_KEY);
+
     expect(tokenContext).toEqual({
-      HIDE_ADVERTISEMENTS: true,
-      HIDE_COOKIE_CONSENT_SCREEN: true,
-      HIDE_MARKETING_DIALOGS: true,
-      DISABLE_NON_FUNCTIONAL_TRACKING: true,
       DISABLE_CONTENT_PAYWALL: false,
+      DISABLE_NON_FUNCTIONAL_TRACKING: false,
       ENABLE_SUBSCRIPTION_ACCESS: false,
+      HIDE_ADVERTISEMENTS: false,
+      HIDE_COOKIE_CONSENT_SCREEN: false,
+      HIDE_MARKETING_DIALOGS: false,
     });
   });
 });

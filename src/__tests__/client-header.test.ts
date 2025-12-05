@@ -1,19 +1,19 @@
 import { randomUUID } from "crypto";
 import { describe, test, expect, beforeEach } from "bun:test";
 import { CURRENT_PROTOCOL_VERSION, FEATURES, ZEROAD_NETWORK_PUBLIC_KEY } from "../constants";
-import { generateKeys, importPrivateKey, importPublicKey, KeyObject } from "../crypto";
+import { generateKeys } from "../crypto";
 import { decodeClientHeader, encodeClientHeader, parseClientToken } from "../headers/client";
 
 describe("Client Headers", () => {
-  let privateKey: KeyObject;
-  let publicKey: KeyObject;
+  let privateKey: string;
+  let publicKey: string;
   let clientId: string;
 
   beforeEach(() => {
-    const { publicKey: publicKeyB64, privateKey: privateKeyB64 } = generateKeys();
+    const keys = generateKeys();
 
-    privateKey = importPrivateKey(privateKeyB64);
-    publicKey = importPublicKey(publicKeyB64);
+    privateKey = keys.privateKey;
+    publicKey = keys.publicKey;
 
     clientId = randomUUID();
   });
@@ -69,15 +69,13 @@ describe("Client Headers", () => {
     });
 
     test("should parse as undefined on a forged header value", () => {
-      publicKey = importPublicKey(ZEROAD_NETWORK_PUBLIC_KEY);
-
       const expiresAt = new Date(Date.now() - 24 * 3600 * 1000);
       const features = [FEATURES.CLEAN_WEB];
 
       const headerValue = encodeClientHeader({ version: CURRENT_PROTOCOL_VERSION, expiresAt, features }, privateKey);
 
       expect(typeof headerValue).toBe("string");
-      expect(decodeClientHeader(headerValue, publicKey)).toBeUndefined();
+      expect(decodeClientHeader(headerValue, ZEROAD_NETWORK_PUBLIC_KEY)).toBeUndefined();
     });
   });
 
