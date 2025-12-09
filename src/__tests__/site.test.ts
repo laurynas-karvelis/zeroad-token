@@ -14,15 +14,12 @@ import { Site } from "../site";
 
 describe("Site()", () => {
   let privateKey: string;
-  let publicKey: string;
   let clientId: string;
 
   beforeEach(() => {
     const keys = generateKeys();
 
     privateKey = keys.privateKey;
-    publicKey = keys.publicKey;
-
     clientId = randomUUID();
   });
 
