@@ -69,7 +69,7 @@ Partnering with Zero Ad Network allows your site to:
 ## Onboarding Your Site
 
 1. [Sign up](https://zeroad.network/login) with Zero Ad Network.
-2. [Register your site](https://zeroad.network/publisher/sites/add) to receive your unique `X-Better-Web-Welcome` header.
+2. [Register your site](https://zeroad.network/publisher/sites/add) to receive your unique `Client ID` value.
 
 Your site must include this header on all publicly accessible HTML or RESTful endpoints so that Zero Ad Network users’ browser extensions can recognize participation.
 
