@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daily Mirror — Front Page (Demo)</title>
+
+    <!-- Bootstrap (Cloudflare CDN) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.8/css/bootstrap.min.css"
+      integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.13.1/font/bootstrap-icons.min.css"
+      integrity="sha512-t7Few9xlddEmgd3oKZQahkNI4dS6l80+eGEzFQiqtyVYdvcSG2D3Iub77R20BdotfRPA9caaRkg1tyaJiPmO0g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <!-- Bootstrap JS bundle (Cloudflare CDN) -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js"
+      integrity="sha512-HvOjJrdwNpDbkGJIG2ZNqDlVqMo77qbs4Me4cah0HoDrfhrbA+8SBlZn1KrvAQw7cILLPFJvdwIgphzQmMm+Pw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+
+    <style>
+      /* News-like aesthetics */
+      :root {
+        --accent: #c41a1a;
+      }
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background: #f5f5f5;
+      }
+      .topbar {
+        background: #fff;
+        border-bottom: 1px solid #e6e6e6;
+      }
+      .brand {
+        font-weight: 700;
+        color: var(--accent);
+        font-size: 1.6rem;
+        letter-spacing: 0.5px;
+      }
+      .nav-link {
+        color: #333;
+      }
+      .hero {
+        background: #fff;
+        padding: 1.25rem;
+        border-radius: 6px;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+      }
+      .article-thumb {
+        object-fit: cover;
+        width: 100%;
+        height: 160px;
+        border-radius: 6px;
+      }
+      .article-card {
+        background: #fff;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+      }
+      .ad-block {
+        background: #f8f9fa;
+        border: 1px dashed #ddd;
+        min-height: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-weight: 600;
+      }
+      .ad-rectangle {
+        min-height: 250px;
+      }
+      .meta {
+        color: #888;
+        font-size: 0.85rem;
+      }
+      .sticky-ad {
+        position: sticky;
+        top: 1rem;
+      }
+      /* Cookie consent full-screen overlay */
+      #cookie-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+      }
+      #cookie-consent {
+        width: min(920px, 94%);
+        background: #fff;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+      }
+      /* Third-party tracker card */
+      .tracker-card-success {
+        background: #e7f7ec;
+        border: 1px solid #b9e4c4;
+        color: #1e7a34;
+      }
+
+      .tracker-card-danger {
+        background: #fff3f3;
+        border: 1px solid #ffd6d6;
+        color: #8a1a1a;
+      }
+      pre.tracker-code {
+        background: #faf7f7;
+        padding: 0.75rem;
+        border-radius: 6px;
+        overflow: auto;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top navigation -->
+    <header class="topbar">
+      <nav class="navbar navbar-expand-lg">
+        <div class="container">
+          <a class="navbar-brand brand" href="#">Daily Mirror</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-nav-dropdown" aria-controls="navbar-nav-dropdown" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+          <div class="collapse navbar-collapse" id="navbar-nav-dropdown">
+            <ul class="navbar-nav">
+              <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Business</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Tech</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Culture</a></li>
+
+              <!-- Get Browser Extension dropdown -->
+              <li class="vr mx-2"></li>
+              <li class="nav-item">
+                <a class="nav-link" href="http://docs.zeroad.network" target="_blank" title="Zero Ad Network - Developer Portal">
+                  Developer Portal
+                  <sup class="bi bi-box-arrow-up-right ms-1"></sup>
+                </a>
+              </li>
+            </ul>
+            <ul class="navbar-nav ms-auto gap-2">
+              <li class="nav-item dropdown">
+                <a class="btn btn-outline-primary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Get browser extension</a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="https://chromewebstore.google.com/detail/zero-ad-network/iifiblbiijamjabkphnpnhjjdbiodnga" target="_blank"><i class="bi bi-browser-chrome me-2"></i>Google Chrome</a></li>
+                  <li><a class="dropdown-item" href="https://addons.mozilla.org/en-US/firefox/addon/zero-ad-network/" target="_blank"><i class="bi bi-browser-firefox me-2"></i>Mozilla Firefox</a></li>
+                  <li><a class="dropdown-item" href="https://chromewebstore.google.com/detail/zero-ad-network/iifiblbiijamjabkphnpnhjjdbiodnga" target="_blank"><i class="bi bi-browser-edge me-2"></i>Microsoft Edge</a></li>
+                </ul>
+              </li>
+              <li><a class="btn btn-outline-primary" href="https://zeroad.network/extension/get-demo-token" target="_blank">
+                <i class="bi bi-arrow-repeat me-1"></i>
+                Get demo token
+              </a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Top banner ad -->
+    <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+      <div class="container my-3">
+        <div class="ad-block ad-rectangle text-center py-3">HEADER AD — 970x90 (placeholder)</div>
+      </div>
+    <% } %>
+
+    <!-- Main layout -->
+    <main class="container my-3">
+      <div class="row g-4">
+        <!-- Main column -->
+        <section class="col-lg-8">
+          <div class="card mb-4 position-relative">
+            <!-- Video Content -->
+            <div class="ratio ratio-16x9">
+              <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
+                      title="YouTube video" allowfullscreen></iframe>
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">Live Event Highlights</h5>
+              <p class="card-text">Watch exclusive live events coverage and highlights in HD.</p>
+            </div>
+
+            <!-- Subscription Overlay -->
+            <% if (!it.tokenContext?.ENABLE_SUBSCRIPTION_ACCESS) { %>
+              <div class="subscription-overlay position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center text-center"
+                  style="background: rgba(255,255,255,0.95); backdrop-filter: blur(3px); z-index: 10; padding: 1rem;">
+                <p class="mb-2" style="font-weight: 600; font-size: 1.1rem;">Subscribe to Access</p>
+                <p class="mb-3">Only $10/month for live event videos</p>
+                <button class="btn btn-primary btn-sm">Subscribe Now</button>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Hero -->
+          <div class="hero mb-3">
+            <div class="row g-3">
+              <div class="col-md-7">
+                <img src="https://picsum.photos/seed/hero/800/460" alt="Hero" class="w-100 rounded" />
+              </div>
+              <div class="col-md-5 d-flex flex-column justify-content-between">
+                <div>
+                  <h1 class="h3">Breaking: Major Event Unfolds — What We Know</h1>
+                  <p class="meta mb-2">By Jane Doe — Dec 12, 2025 • 14:32</p>
+                  <p class="mb-3">
+                    Short summary paragraph that reads like top-front-page news. This is crafted to look like a real
+                    lead story summary.
+                  </p>
+                </div>
+                <% if (it.tokenContext && !it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+                  <div class="d-flex gap-2">
+                    <div class="ad-block flex-fill" style="min-height: 90px">INLINE AD (300x90)</div>
+                    <div class="ad-block flex-fill" style="min-height: 90px">SPONSORED</div>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Article list -->
+          <div class="row">
+            <div class="col-md-6">
+              <div class="card mb-4 position-relative">
+                <!-- News Content -->
+                <img src="https://picsum.photos/seed/news1/400/200" class="card-img-top" alt="News Thumbnail">
+                <div class="card-body">
+                  <h5 class="card-title">Breaking: Major Event Shakes the City</h5>
+                  <p class="card-text">A concise summary of the news story, highlighting the key points in a few sentences.</p>
+                </div>
+
+                <!-- Paywall Overlay -->
+                <% if (!it.tokenContext?.DISABLE_CONTENT_PAYWALL) { %>
+                  <div class="paywall-overlay position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center text-center" 
+                      style="background: rgba(255,255,255,0.95); backdrop-filter: blur(3px); z-index: 10; padding: 1rem;">
+                    <p class="mb-2" style="font-weight: 600; font-size: 1.1rem;">Subscribe to read</p>
+                    <p class="mb-3">Only <b>$3 / month</b> to unlock this article</p>
+                    <button class="btn btn-primary btn-sm">Subscribe Now</button>
+                  </div>
+                <% } %>
+              </div>
+
+              <article class="article-card">
+                <div class="row g-2">
+                  <div class="col-5">
+                    <img class="article-thumb" src="https://picsum.photos/seed/a1/400/240" alt="thumb" />
+                  </div>
+                  <div class="col-7">
+                    <h5 class="mb-1">City Council Approves Major Proposal</h5>
+                    <p class="meta mb-2">Local • 2 hours ago</p>
+                    <p class="small mb-0">
+                      Short 1-2 line blurb summarizing the article with a newsy tone and immediate relevance.
+                    </p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="article-card">
+                <div class="row g-2">
+                  <div class="col-5">
+                    <img class="article-thumb" src="https://picsum.photos/seed/a2/400/240" alt="thumb" />
+                  </div>
+                  <div class="col-7">
+                    <h5 class="mb-1">Markets Rally on Positive Data</h5>
+                    <p class="meta mb-2">Business • 1 hour ago</p>
+                    <p class="small mb-0">
+                      Stock markets responded positively to fresh indicators released this morning.
+                    </p>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Mid-page ad -->
+              <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+                <div class="my-3">
+                  <div class="ad-block text-center py-4">MID-PAGE AD — 300x250</div>
+                </div>
+              <% } %>
+
+              <article class="article-card">
+                <div class="row g-2">
+                  <div class="col-5">
+                    <img class="article-thumb" src="https://picsum.photos/seed/a3/400/240" alt="thumb" />
+                  </div>
+                  <div class="col-7">
+                    <h5 class="mb-1">New Tech Product Unveiled</h5>
+                    <p class="meta mb-2">Tech • 3 hours ago</p>
+                    <p class="small mb-0">A concise explainer about the launch and industry reaction.</p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="article-card">
+                <div class="row g-2">
+                  <div class="col-5">
+                    <img class="article-thumb" src="https://picsum.photos/seed/a4/400/240" alt="thumb" />
+                  </div>
+                  <div class="col-7">
+                    <h5 class="mb-1">Arts Festival Announces Lineup</h5>
+                    <p class="meta mb-2">Culture • Yesterday</p>
+                    <p class="small mb-0">Preview of highlighted acts and what to expect this season.</p>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Inline wide ad -->
+              <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+                <div class="my-3">
+                  <div class="ad-block text-center py-4">INLINE WIDE AD — 728x90</div>
+                </div>
+              <% } %>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="col-md-6">
+              <!-- Third-party tracker info (explicitly visible to user) -->
+                
+              <div class="card tracker-card tracker-card-success mb-4" id="tracker-not-loaded">
+                <div class="card-body">
+                  <h5 class="card-title" id="tracker-title">Tracking Disabled</h5>
+                  <p id="tracker-text">No tracking is active.</p>
+
+                  <pre class="small p-2 bg-light rounded" id="tracker-code">// tracker not loaded</pre>
+                </div>
+              </div>
+
+              <div class="card tracker-card tracker-card-danger mb-4 d-none" id="tracker-loaded">
+                <div class="card-body">
+                  <h5 class="card-title" id="tracker-title">Tracking Active</h5>
+                  <p id="tracker-text">A third-party script is collecting data.</p>
+
+                  <pre class="small p-2 bg-light rounded" id="tracker-code">// faux-tracker.js
+console.log("I'm collecting your sensitive data about you");</pre>
+                </div>
+              </div>
+
+              <div class="sticky-ad">
+                <div class="article-card mb-3">
+                  <h6 class="mb-2">Trending</h6>
+                  <ol class="ps-3">
+                    <li class="mb-2"><strong>Leader's Statement</strong> — World</li>
+                    <li class="mb-2"><strong>Local Hero</strong> — Community</li>
+                    <li class="mb-2"><strong>Weather Alert</strong> — Updates</li>
+                  </ol>
+                </div>
+
+                <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+                  <div class="article-card mb-3 ad-rectangle ad-block text-center">
+                    SIDEBAR AD — 300x600 (placeholder)
+                  </div>
+                <% } %>
+
+                <div class="article-card mb-3">
+                  <h6 class="mb-2">Newsletter</h6>
+                  <p class="small">Get top stories in your inbox.</p>
+                  <form onsubmit="return false;">
+                    <div class="mb-2">
+                      <input class="form-control form-control-sm" placeholder="Email address" type="email" />
+                    </div>
+                    <button class="btn btn-sm btn-primary w-100">Subscribe</button>
+                  </form>
+                </div>
+
+                <div class="article-card mb-3">
+                  <h6 class="mb-2">Live Updates</h6>
+                  <div class="small">
+                    <div class="d-flex justify-content-between border-bottom py-1">
+                      <span>Market Index rises 0.8%</span>
+                      <span class="text-muted">Now</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-1">
+                      <span>Traffic delays on the Central Line</span>
+                      <span class="text-muted">5m ago</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                      <span>International summit highlights released</span>
+                      <span class="text-muted">12m ago</span>
+                    </div>
+                  </div>
+                </div>
+
+                <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+                  <div class="article-card mb-3 ad-rectangle ad-block text-center">
+                    SIDEBAR AD — 300x600 (placeholder)
+                  </div>
+                <% } %>
+
+                <div class="article-card mb-3">
+                  <h6 class="mb-2">Social Feed</h6>
+                  <ul class="list-unstyled small mb-0">
+
+                    <li class="mb-3">
+                      <div class="d-flex">
+                        <div class="me-2" style="width:32px; height:32px;">
+                          <img src="https://picsum.photos/seed/tw1/64/64" class="rounded-circle w-100 h-100" alt="">
+                        </div>
+                        <div>
+                          <strong>@NewsAnalyst</strong><br>
+                          “Major developments expected later today. Stay tuned.”
+                          <div class="meta mt-1">3m ago</div>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li class="mb-3">
+                      <div class="d-flex">
+                        <div class="me-2" style="width:32px; height:32px;">
+                          <img src="https://picsum.photos/seed/tw2/64/64" class="rounded-circle w-100 h-100" alt="">
+                        </div>
+                        <div>
+                          <strong>@CityReporter</strong><br>
+                          “Traffic around downtown is heavier than usual this morning.”
+                          <div class="meta mt-1">8m ago</div>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li class="mb-3">
+                      <div class="d-flex">
+                        <div class="me-2" style="width:32px; height:32px;">
+                          <img src="https://picsum.photos/seed/tw3/64/64" class="rounded-circle w-100 h-100" alt="">
+                        </div>
+                        <div>
+                          <strong>@MarketWatcher</strong><br>
+                          “Strong opening for tech stocks. Investors optimistic.”
+                          <div class="meta mt-1">15m ago</div>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li class="mb-3">
+                      <div class="d-flex">
+                        <div class="me-2" style="width:32px; height:32px;">
+                          <img src="https://picsum.photos/seed/tw4/64/64" class="rounded-circle w-100 h-100" alt="">
+                        </div>
+                        <div>
+                          <strong>@WeatherAlerts</strong><br>
+                          “Expect colder temperatures moving in later tonight.”
+                          <div class="meta mt-1">21m ago</div>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li>
+                      <div class="d-flex">
+                        <div class="me-2" style="width:32px; height:32px;">
+                          <img src="https://picsum.photos/seed/tw5/64/64" class="rounded-circle w-100 h-100" alt="">
+                        </div>
+                        <div>
+                          <strong>@CultureDaily</strong><br>
+                          “New exhibit opens this weekend. Highly anticipated.”
+                          <div class="meta mt-1">29m ago</div>
+                        </div>
+                      </div>
+                    </li>
+
+                  </ul>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- Right column for wide ads / extra -->
+        <aside class="col-lg-4 d-none d-lg-block">
+          <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+            <div class="article-card ad-rectangle ad-block mb-3">LARGE AD 300x600</div>
+          <% } %>
+
+          <div class="article-card mb-3 position-relative">
+            <h6 class="mb-2">Most Read</h6>
+            <ul class="list-unstyled">
+              <li class="mb-2">• Exclusive interview with a public figure</li>
+              <li class="mb-2">• How to prepare for winter</li>
+              <li class="mb-2">• Top 10 travel destinations</li>
+            </ul>
+
+            <!-- Paywall Overlay -->
+            <% if (!it.tokenContext?.DISABLE_CONTENT_PAYWALL) { %>
+              <div class="paywall-overlay position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center text-center" 
+                  style="background: rgba(255,255,255,0.95); backdrop-filter: blur(3px); z-index: 10; padding: 1rem;">
+                <p class="mb-2" style="font-weight: 600; font-size: 1.1rem;">Subscribe to read</p>
+                <p class="mb-3">Only <b>$3 / month</b> to unlock this article</p>
+                <button class="btn btn-primary btn-sm">Subscribe Now</button>
+              </div>
+            <% } %>
+          </div>
+
+          <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+            <div class="article-card mb-3">
+              <h6 class="mb-2">Sponsored</h6>
+              <p class="small">Sponsored content preview with a short description and a call to action.</p>
+              <div class="ad-block py-3">SPONSORED CONTENT</div>
+            </div>
+          <% } %>
+
+          <div class="article-card mb-3">
+            <h6 class="mb-2">Editor's Picks</h6>
+            <div class="d-flex mb-2">
+              <img src="https://picsum.photos/seed/ep1/120/80" class="rounded me-2" alt="">
+              <div class="small">
+                <strong>In-Depth Analysis of Global Trends</strong>
+                <div class="meta">Analysis</div>
+              </div>
+            </div>
+            <div class="d-flex mb-2">
+              <img src="https://picsum.photos/seed/ep2/120/80" class="rounded me-2" alt="">
+              <div class="small">
+                <strong>The Future of Urban Development</strong>
+                <div class="meta">Features</div>
+              </div>
+            </div>
+            <div class="d-flex">
+              <img src="https://picsum.photos/seed/ep3/120/80" class="rounded me-2" alt="">
+              <div class="small">
+                <strong>How Innovation Is Shaping Daily Life</strong>
+                <div class="meta">Tech</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="article-card mb-3">
+            <h6 class="mb-2">In Case You Missed It</h6>
+            <ul class="list-unstyled small mb-0">
+              <li class="mb-2">
+                <strong>Major Policy Shift Expected Next Week</strong><br>
+                <span class="meta">Politics</span>
+              </li>
+              <li class="mb-2">
+                <strong>Unexpected Weather Patterns Continue</strong><br>
+                <span class="meta">Weather</span>
+              </li>
+              <li class="mb-2">
+                <strong>Breakthrough in Medical Research Announced</strong><br>
+                <span class="meta">Health</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="article-card mb-3">
+            <h6 class="mb-2">Currency Rates</h6>
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr class="small text-muted">
+                  <th>Currency</th>
+                  <th>Rate</th>
+                  <th>Change</th>
+                </tr>
+              </thead>
+              <tbody class="small">
+                <tr>
+                  <td>USD / EUR</td>
+                  <td>0.92</td>
+                  <td class="text-success">+0.14%</td>
+                </tr>
+                <tr>
+                  <td>USD / GBP</td>
+                  <td>0.79</td>
+                  <td class="text-danger">-0.21%</td>
+                </tr>
+                <tr>
+                  <td>USD / JPY</td>
+                  <td>147.30</td>
+                  <td class="text-success">+0.08%</td>
+                </tr>
+                <tr>
+                  <td>EUR / GBP</td>
+                  <td>0.86</td>
+                  <td class="text-danger">-0.05%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
+            <div class="article-card mb-3">
+              <h6 class="mb-2">Sponsored</h6>
+              <p class="small">Sponsored content preview with a short description and a call to action.</p>
+              <div class="ad-block py-3">SPONSORED CONTENT</div>
+            </div>
+          <% } %>
+
+          <div class="card mb-4">
+            <img src="https://picsum.photos/seed/sidebar1/300/180" class="card-img-top" alt="Sidebar Visual">
+            <div class="card-body">
+              <h5 class="card-title">Did You Know?</h5>
+              <p class="card-text">
+                Explore interesting facts and tidbits that make your day a little brighter. Perfect for sidebar content that catches the eye.
+              </p>
+              <a href="#" class="btn btn-outline-primary btn-sm">Learn More</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+      <!-- row -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="container mt-5 mb-5">
+      <div class="d-flex justify-content-between small text-muted">
+        <div>© Daily Mirror 2025</div>
+        <div>Privacy · Terms · Contact</div>
+      </div>
+    </footer>
+
+    <!-- Cookie consent overlay (blocks page until accept/reject) -->
+    <% if (!it.tokenContext?.HIDE_COOKIE_CONSENT_SCREEN) { %>
+      <div id="cookie-overlay" aria-hidden="false">
+        <div id="cookie-consent" role="dialog" aria-modal="true" aria-labelledby="cookie-title">
+          <div class="d-flex align-items-start gap-3">
+            <div style="font-size: 1.6rem; color: var(--accent)">🍪</div>
+            <div class="flex-fill">
+              <h4 id="cookie-title" class="mb-1">We value your privacy</h4>
+              <p class="mb-2">This demo page shows how annoying cookie consent screens are.</p>
+              <p class="mb-2">This page also imitates 3rd party data collection tracking. Choose "Accept all" to allow cookies and trackers, or "Reject all" to block them.</p>
+              <div class="mb-2">
+                <strong class="me-2">When "Accept all" is clicked:</strong>
+                <span class="text-muted">The faux tracking will "enable" imitating the visitor gave permission to collect data about them.</span>
+              </div>
+              <div class="d-flex gap-2">
+                <button id="accept-all" class="btn btn-primary">Accept all</button>
+                <button id="reject-all" class="btn btn-outline-secondary">Reject all</button>
+                <button id="preferences" class="btn btn-link">Cookie preferences</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Bootstrap modal (offer) -->
+    <% if (!it.tokenContext?.HIDE_MARKETING_DIALOGS) { %>
+      <div class="modal fade" id="offerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header border-0">
+              <h5 class="modal-title">☕️ Subscribe to win a cup of coffee now!</h5>
+
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <img class="article-thumb" src="https://picsum.photos/seed/a2/400/240" alt="thumb" />
+              <p class="mt-3">Subscribe to our exclusive newsletter for breaking alerts and special offers.</p>
+              <p class="mt-3">We never share your email, pinky promise 😜</p>
+              <form id="offer-form" onsubmit="return false;">
+                <div class="mb-2">
+                  <input class="form-control" id="offer-email" type="email" placeholder="Email address" required />
+                </div>
+                <button class="btn btn-danger w-100" id="offer-submit">Subscribe (does nothing)</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <script>
+      (function () {
+        const cookieOverlay = document.getElementById('cookie-overlay');
+        const trackerLoaded = document.getElementById('tracker-loaded');
+        const trackerNotLoaded = document.getElementById('tracker-not-loaded');
+
+        function showInactive() {
+          trackerLoaded.classList.add('d-none');
+          trackerNotLoaded.classList.remove('d-none');
+          showOfferModal();
+        }
+
+        function showActive() {
+          trackerLoaded.classList.remove('d-none');
+          trackerNotLoaded.classList.add('d-none');
+          showOfferModal();
+        }
+
+        function loadFauxTracker() {
+          setTimeout(() => {
+            // simulate loading
+            showActive();
+          }, 500);
+        }
+
+        if (cookieOverlay) {
+          // Reject = inactive
+          document.getElementById('reject-all').onclick = () => {
+            cookieOverlay.style.display = 'none';
+            showInactive();
+          };
+
+          // Accept = load tracker
+          document.getElementById('accept-all').onclick = () => {
+            cookieOverlay.style.display = 'none';
+            // shows loading state briefly (optional)
+            showInactive();
+            loadFauxTracker();
+          };
+        }
+
+        // --- Offer modal: open 2 seconds after cookie consent screen disappears ---
+        function showOfferModal() {
+          const modal = new bootstrap.Modal(document.getElementById("offerModal"));
+          // Wait 2 seconds then show
+          setTimeout(() => {
+            modal.show();
+          }, 2000);
+        }
+
+        const offerModalEl = document.getElementById("offerModal");
+
+        if (offerModalEl) {
+          const modal = new bootstrap.Modal(offerModalEl, { backdrop: true, keyboard: true });
+          
+          // Prevent actual submission — leads nowhere by design
+          document.getElementById("offer-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            // Visual feedback: flash a message inside modal (no network call)
+            const submitBtn = document.getElementById("offer-submit");
+            submitBtn.textContent = "Subscribed (demo)";
+            setTimeout(() => {
+              submitBtn.textContent = "Subscribe (does nothing)";
+            }, 1400);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

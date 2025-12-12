@@ -1,3 +1,5 @@
+import path from "node:path";
+import { Eta } from "eta";
 import Fastify from "fastify";
 import { Site, FEATURES } from "@zeroad.network/token";
 
@@ -7,7 +9,7 @@ import { Site, FEATURES } from "@zeroad.network/token";
 
 const site = Site({
   // Pass in `clientId` you received registering your site on Zero Ad Network platform
-  clientId: "Z2CclA8oXIT1e0QmqTWF8w",
+  clientId: "DEMO-Z2CclA8oXIT1e0Qmq",
   // Specify supported site features only
   features: [FEATURES.CLEAN_WEB, FEATURES.ONE_PASS],
 });
@@ -16,6 +18,7 @@ const site = Site({
 // Fastify app setup
 // -----------------------------------------------------------------------------
 const app = Fastify();
+const eta = new Eta({ views: path.join(import.meta.dirname, "../templates") });
 
 // Extend FastifyRequest interface to include tokenContext
 declare module "fastify" {
@@ -41,31 +44,7 @@ app.addHook("onRequest", async (request, reply) => {
 // -----------------------------------------------------------------------------
 app.get("/", async (request, reply) => {
   // Access parsed `tokenContext` for this request
-  const tokenContext = request.tokenContext;
-
-  // Render HTML template using `tokenContext` to adjust feature display
-  const state = (value: boolean) => (value && '<b style="background: #b0b0b067">YES</b>') || "NO";
-  const template = `
-    <html>
-      <body>
-        <h1>Hello</h1>
-        <h3>Contents of "tokenContext" variable for this request:</h3>
-        <pre style="display: inline-block; border: 1px solid #5b5b5ba4; padding: 0.5rem; background: #b0b0b067">tokenContext = ${JSON.stringify(tokenContext, null, 2)}</pre>
-
-        <h3>Site Feature toggles to be used while rendering this page:</h3>
-        <ul>
-          <li>Hide Advertisements: ${state(tokenContext.HIDE_ADVERTISEMENTS)}</li>
-          <li>Hide Cookie Consent Dialog: ${state(tokenContext.HIDE_COOKIE_CONSENT_SCREEN)}</li>
-          <li>Hide Marketing Dialogs: ${state(tokenContext.HIDE_MARKETING_DIALOGS)}</li>
-          <li>Disable 3rd Party non-functional tracking: ${state(tokenContext.DISABLE_NON_FUNCTIONAL_TRACKING)}</li>
-          <li>Disable Content Paywalls: ${state(tokenContext.DISABLE_CONTENT_PAYWALL)}</li>
-          <li>Enable Free access to your Base Subscription plan: ${state(tokenContext.ENABLE_SUBSCRIPTION_ACCESS)}</li>
-        </ul>
-      </body>
-    </html>
-  `;
-
-  reply.type("text/html").send(template);
+  reply.type("text/html").send(eta.render("./homepage", { tokenContext: request.tokenContext }));
 });
 
 app.get("/json", async (request) => {
@@ -79,8 +58,9 @@ app.get("/json", async (request) => {
 // -----------------------------------------------------------------------------
 // Start Fastify server
 // -----------------------------------------------------------------------------
-app.listen({ port: 3000 }, () => {
-  console.log(`Fastify server listening at port 3000
-    · HTML template example:        http://localhost:3000
-    · Plain JSON endpoint example:  http://localhost:3000/json`);
+const port = 8080;
+app.listen({ port }, () => {
+  console.log(`Express server listening at port ${port}:
+    · HTML site homepage:           http://localhost:${port}
+    · JSON output of tokenContext:  http://localhost:${port}/token`);
 });

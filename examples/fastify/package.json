@@ -8,7 +8,8 @@
     "start": "node index.ts"
   },
   "dependencies": {
-    "@zeroad.network/token": "^0.13.0",
+    "@zeroad.network/token": "^0.13.12",
+    "eta": "^4.4.1",
     "fastify": "^5.6.2"
   },
   "engines": {

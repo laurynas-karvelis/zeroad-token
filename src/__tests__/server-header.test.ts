@@ -46,13 +46,13 @@ describe("Server Header", () => {
     });
 
     test("should throw when no features are provided", () => {
-      expect(() => encodeServerHeader(clientId, [])).toThrow(/At least one Site feature must be provided/);
+      expect(() => encodeServerHeader(clientId, [])).toThrow(/At least one site feature must be provided/);
     });
 
-    test("should throw when no unsupported Site features are provided", () => {
+    test("should throw when no unsupported site features are provided", () => {
       expect(() =>
         encodeServerHeader(clientId, ["not a real feature", FEATURES.CLEAN_WEB, "should fail"] as never)
-      ).toThrow(/Only valid Site features are allowed: CLEAN_WEB | ONE_PASS/);
+      ).toThrow(/Only valid site features are allowed: CLEAN_WEB | ONE_PASS/);
     });
   });
 });

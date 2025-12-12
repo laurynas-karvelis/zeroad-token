@@ -117,7 +117,7 @@ const app = express();
 
 // Initialize the Zero Ad Network module at app startup.
 // Your site's `clientId` value is obtained during site registration on the Zero Ad Network platform (https://zeroad.network).
-const ZERO_AD_NETWORK_CLIENT_ID = "Z2CclA8oXIT1e0QmqTWF8w";
+const ZERO_AD_NETWORK_CLIENT_ID = "DEMO-Z2CclA8oXIT1e0Qmq";
 const site = Site({
   clientId: ZERO_AD_NETWORK_CLIENT_ID,
   features: [FEATURES.CLEAN_WEB, FEATURES.ONE_PASS],
