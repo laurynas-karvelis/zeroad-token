@@ -26,5 +26,6 @@ import { Site, FEATURES, SERVER_HEADERS, CLIENT_HEADERS } from "../dist/index.mj
     ENABLE_SUBSCRIPTION_ACCESS: false,
   });
 
+  // eslint-disable-next-line no-console
   console.info("Passed.");
 })();

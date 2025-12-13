@@ -59,6 +59,7 @@ app.get("/json", (c) => {
 const port = 8080;
 Bun.serve({ fetch: app.fetch, port });
 
+// eslint-disable-next-line no-console
 console.log(`Express server listening at port ${port}:
     · HTML site homepage:           http://localhost:${port}
     · JSON output of tokenContext:  http://localhost:${port}/token`);

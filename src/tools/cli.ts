@@ -1,6 +1,7 @@
 import { generateKeys } from "../crypto";
+import { log } from "../logger";
 
 const { privateKey, publicKey } = generateKeys();
 
-console.info("Public Key:", publicKey);
-console.info("Private Key:", privateKey);
+log("info", "Public Key:", publicKey);
+log("info", "Private Key:", privateKey);

@@ -54,6 +54,7 @@ app.get("/token", (req, res) => {
 // -----------------------------------------------------------------------------
 const port = 8080;
 app.listen(port, () => {
+  // eslint-disable-next-line no-console
   console.log(`Express server listening at port ${port}:
     · HTML site homepage:           http://localhost:${port}
     · JSON output of tokenContext:  http://localhost:${port}/token`);

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 type LogLevel = "error" | "warn" | "info" | "debug";
 
 const levels: Record<LogLevel, number> = {

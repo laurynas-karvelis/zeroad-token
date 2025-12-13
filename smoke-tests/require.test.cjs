@@ -26,5 +26,6 @@ const { Site, FEATURES, SERVER_HEADERS, CLIENT_HEADERS } = require("../dist/inde
     ENABLE_SUBSCRIPTION_ACCESS: false,
   });
 
+  // eslint-disable-next-line no-console
   console.info("Passed.");
 })();
