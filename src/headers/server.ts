@@ -45,7 +45,7 @@ export function decodeServerHeader(headerValue: string | null | undefined): Welc
     assert(Number(flags).toFixed(0).toString() === flags, "Invalid flags number");
 
     const features: (keyof typeof FEATURE)[] = [];
-    for (const [feature, bit] of FEATURE_MAP()) {
+    for (const [feature, bit] of FEATURE_MAP) {
       if (hasFlag(Number(flags), bit)) features.push(feature);
     }
 

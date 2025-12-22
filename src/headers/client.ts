@@ -28,6 +28,8 @@ const FEATURE_TO_ACTIONS: Record<FEATURE, FEATURE_ACTION[]> = {
   [FEATURE.ONE_PASS]: ["DISABLE_CONTENT_PAYWALL", "ENABLE_SUBSCRIPTION_ACCESS"],
 };
 
+const FEATURE_TO_ACTIONS_KEYS = Object.keys(FEATURE_TO_ACTIONS);
+
 export type ParseClientTokenOptions = {
   clientId: string;
   features: FEATURE[];
@@ -37,7 +39,6 @@ export type ParseClientTokenOptions = {
 export function parseClientToken(headerValue: ClientHeaderValue, options: ParseClientTokenOptions): TokenContext {
   const headerValueAsString = Array.isArray(headerValue) ? headerValue[0] : headerValue;
   const data = decodeClientHeader(headerValueAsString, options.publicKey || ZEROAD_NETWORK_PUBLIC_KEY);
-
   let flags = 0;
 
   // Test for no data or token is already expired
@@ -46,16 +47,23 @@ export function parseClientToken(headerValue: ClientHeaderValue, options: ParseC
   // Test if developer token is provided and granted `clientId` matches current `clientId`
   if (flags && data?.clientId && data.clientId !== options.clientId) flags = 0;
 
-  const context = new Map<FEATURE_ACTION, boolean>();
-  for (const [feature, actionNames] of Object.entries(FEATURE_TO_ACTIONS)) {
+  const features = new Set(options.features);
+  const context: Partial<TokenContext> = {};
+  const keysLength = FEATURE_TO_ACTIONS_KEYS.length;
+
+  for (let k = 0; k < keysLength; k++) {
     // Check if site supports the feature, of this token owner, is allowed to be enabled
-    const decision = options.features.includes(Number(feature)) && hasFlag(Number(feature), flags);
-    for (const actionName of actionNames) {
-      context.set(actionName, decision);
+    const featureAsNumber = Number(FEATURE_TO_ACTIONS_KEYS[k]) as FEATURE;
+    const actionNames = FEATURE_TO_ACTIONS[featureAsNumber];
+    const decision = features.has(featureAsNumber) && hasFlag(featureAsNumber, flags);
+
+    const actionsLength = actionNames.length;
+    for (let j = 0; j < actionsLength; j++) {
+      context[actionNames[j]] = decision;
     }
   }
 
-  return Object.fromEntries(context) as TokenContext;
+  return context as TokenContext;
 }
 
 export type DecodedClientHeader = {
