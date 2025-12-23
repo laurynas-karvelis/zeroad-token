@@ -4,7 +4,6 @@
   "license": "Apache-2.0",
   "repository": "github:laurynas-karvelis/zeroad-token-typescript",
   "homepage": "https://zeroad.network",
-  "private": false,
   "author": {
     "name": "Laurynas Karvelis <Explosive Brains Ltd>",
     "email": "hello@zeroad.network",
