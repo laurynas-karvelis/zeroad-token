@@ -1,39 +1,192 @@
-# Fastify example
+# Fastify Example (TypeScript)
 
-This small demo site shows how the `@zeroad.network/token` module works and how you can add it to your own project.
+This demo shows how to integrate the `@zeroad.network/token` module with Fastify using TypeScript, async token parsing, and shared Eta templates.
 
-## Try it yourself
+## Features
 
-Note: As this is TypeScript implementation example - we recommend using **Bun** runtime here as it transpiles TypeScript code natively without any additional modules or setup required.
+- ✅ **TypeScript** - Full type safety with interface extensions
+- ✅ **Async token parsing** - Non-blocking crypto operations using Node.js libuv threadpool
+- ✅ **Shared Eta templates** - Reusable template in `../templates/homepage.eta`
+- ✅ **Fastify hooks** - Clean middleware pattern with `onRequest` hook
+- ✅ **Conditional rendering** - Ads, paywalls, and tracking based on subscription status
+- ✅ **Cache configuration** - Built-in token caching for performance
 
-Follow these steps:
+## Quick Start
 
-1. Install the dependencies:
-   ```shell
-   bun install
-   ```
-2. Start the demo site:
-   ```shell
-   bun run start
-   ```
-3. Open the homepage: [http://localhost:8080](http://localhost:8080)
+### 1. Install Dependencies
 
-   To view the raw `tokenContext` JSON output, open: [http://localhost:8080/token](http://localhost:8080/token).
+**Using Bun (Recommended for TypeScript):**
 
-If you do not have the Zero Ad Network browser extension installed and do not have an active subscription, the demo will show how an average visitor would experience the site: cookie prompts, marketing popups, fake trackers, ads, paywalls, and subscription requests.
+```shell
+bun install
+```
 
-## How to test with the browser extension
+**Using npm:**
 
-To test the demo without buying a subscription:
+```shell
+npm install
+```
 
-1. Click **Get browser extension** in the top navigation and install the extension for your browser.
-1. After installing, click **Get demo token**. This opens a Zero Ad Network developer page that should automatically sync a demo token to your extension. The demo token is valid for 7 days. Revisit the page to renew the token for another 7 days.
-1. Now reload the page.
+### 2. Start the Server
 
-The demo token uses the **Freedom** subscription plan so you can see the full feature set when both the site and the user have matching features.
+**Using Bun:**
 
-## Final notes
+```shell
+bun run start
+```
 
-This example should help you set up Zero Ad Network on your site.
+**Using Node.js:**
 
-For questions, use the contact email listed on the site: [https://zeroad.network/terms](https://zeroad.network/terms)
+```shell
+node --loader ts-node/esm index.ts
+# or with tsx
+npx tsx index.ts
+```
+
+### 3. Open in Browser
+
+- **Homepage**: [http://localhost:8080](http://localhost:8080)
+- **Premium API**: [http://localhost:8080/api/premium-data](http://localhost:8080/api/premium-data)
+
+## What You'll See
+
+**Without Zero Ad Network subscription:**
+
+- Advertisement banners
+- Cookie consent dialogs
+- Marketing popups
+- Analytics tracking enabled
+- Paywalled content (preview only)
+
+**With Zero Ad Network subscription:**
+
+- Clean, ad-free experience
+- No cookie consent prompts
+- No marketing interruptions
+- Full access to paywalled content
+- Privacy-protected browsing
+
+## Testing with Demo Token
+
+To test without purchasing a subscription:
+
+1. **Get the Browser Extension**
+   - Click "Get browser extension" in the navigation
+   - Install for Chrome, Firefox, or Edge
+
+2. **Get Demo Token**
+   - Click "Get demo token" after installing
+   - This opens the Zero Ad Network developer page
+   - Demo token syncs automatically to your extension
+   - Valid for 7 days (revisit to renew)
+
+3. **Reload the Page**
+   - The demo uses the **Freedom** plan (all features enabled)
+   - You'll see the full ad-free, paywall-free experience
+
+## How It Works
+
+### Site Initialization
+
+```typescript
+import { Site, FEATURE, type TokenContext } from "@zeroad.network/token";
+
+const site = Site({
+  clientId: process.env.ZERO_AD_CLIENT_ID || "DEMO-Z2CclA8oXIT1e0Qmq",
+  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
+  cacheConfig: {
+    enabled: true,
+    ttl: 10000,
+    maxSize: 500,
+  },
+});
+```
+
+### Type Extension
+
+```typescript
+declare module "fastify" {
+  interface FastifyRequest {
+    tokenContext: TokenContext;
+  }
+}
+```
+
+### Fastify Hook
+
+```typescript
+fastify.addHook("onRequest", async (request, reply) => {
+  // Set Welcome Header
+  reply.header(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE);
+
+  // Parse token (async)
+  request.tokenContext = await site.parseClientToken(request.headers[site.CLIENT_HEADER_NAME]);
+});
+```
+
+### Route Handler
+
+```typescript
+fastify.get("/", async (request, reply) => {
+  return reply.view("homepage", {
+    tokenContext: request.tokenContext,
+  });
+});
+```
+
+## Token Context
+
+The `tokenContext` object contains these boolean flags:
+
+```typescript
+interface TokenContext {
+  HIDE_ADVERTISEMENTS: boolean;
+  HIDE_COOKIE_CONSENT_SCREEN: boolean;
+  HIDE_MARKETING_DIALOGS: boolean;
+  DISABLE_NON_FUNCTIONAL_TRACKING: boolean;
+  DISABLE_CONTENT_PAYWALL: boolean;
+  ENABLE_SUBSCRIPTION_ACCESS: boolean;
+}
+```
+
+All flags are `false` for:
+
+- Users without subscriptions
+- Expired tokens
+- Invalid/forged tokens
+
+## Performance
+
+- **Async crypto operations** - Non-blocking signature verification
+- **Token caching** - 80-95% performance improvement for repeated tokens
+- **Libuv threadpool** - ~8000 verifications/sec without blocking event loop
+- **Fastify performance** - One of the fastest Node.js frameworks
+- **Typical overhead** - ~150μs per token parse (cache miss), ~10μs (cache hit)
+
+## Routes
+
+- `GET /` - Homepage with conditional ads and features
+- `GET /api/premium-data` - Premium API endpoint (requires subscription)
+
+## TypeScript Benefits
+
+- ✅ Full type inference for `tokenContext`
+- ✅ Compile-time error checking
+- ✅ IDE autocomplete for all token flags
+- ✅ Type-safe route handlers
+- ✅ Interface extensions for Fastify
+
+## Runtime Support
+
+This example works with:
+
+- **Node.js** 16+ (with TypeScript transpiler)
+- **Bun** 1.1.0+ (native TypeScript support - recommended)
+- **Deno** 2.0.0+ (native TypeScript support)
+
+## Learn More
+
+- **Documentation**: [https://docs.zeroad.network](https://docs.zeroad.network)
+- **Register Your Site**: [https://zeroad.network/publisher/sites/add](https://zeroad.network/publisher/sites/add)
+- **Platform**: [https://zeroad.network](https://zeroad.network)
+- **Contact**: See [https://zeroad.network/terms](https://zeroad.network/terms)

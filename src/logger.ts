@@ -16,8 +16,18 @@ export function setLogLevel(level: LogLevel): void {
   }
 }
 
+type LogTransport = (level: LogLevel, ...args: unknown[]) => void;
+
+let transport: LogTransport = (level, ...args) => {
+  console.log(`[${level.toUpperCase()}]`, ...args);
+};
+
+export function setLogTransport(fn: LogTransport): void {
+  transport = fn;
+}
+
 export function log(level: LogLevel, ...args: unknown[]): void {
   if (levels[level] <= levels[currentLevel]) {
-    console.log(`[${level.toUpperCase()}]`, ...args);
+    transport(level, ...args);
   }
 }

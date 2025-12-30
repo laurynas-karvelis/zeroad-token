@@ -1,67 +1,98 @@
 import path from "node:path";
+import Fastify from "fastify";
+import fastifyView from "@fastify/view";
 import { Eta } from "eta";
-import Fastify, { FastifyReply, FastifyRequest } from "fastify";
-import { Site, FEATURE } from "@zeroad.network/token";
+import { Site, FEATURE, type TokenContext } from "@zeroad.network/token";
 
-/**
- * Module initialization (once at startup)
- */
-
-const site = Site({
-  // Pass in `clientId` you received registering your site on Zero Ad Network platform
-  clientId: "DEMO-Z2CclA8oXIT1e0Qmq",
-  // Specify supported site features only
-  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
+const fastify = Fastify({
+  logger: true,
 });
 
-// -----------------------------------------------------------------------------
-// Fastify app setup
-// -----------------------------------------------------------------------------
-const app = Fastify();
-const eta = new Eta({ views: path.join(import.meta.dirname, "../templates") });
+// Register Eta view engine
+await fastify.register(fastifyView, {
+  engine: {
+    eta: new Eta({ views: path.join(import.meta.dirname, "../templates") }),
+  },
+  root: "../templates",
+});
 
-// Extend FastifyRequest interface to include tokenContext
+// Extend Fastify request type
 declare module "fastify" {
   interface FastifyRequest {
-    tokenContext: ReturnType<typeof site.parseClientToken>;
+    tokenContext: TokenContext;
   }
 }
 
-// -----------------------------------------------------------------------------
-// Middleware (Fastify hook)
-// -----------------------------------------------------------------------------
-app.addHook("onRequest", async (request: FastifyRequest, reply: FastifyReply) => {
-  // Inject the "X-Better-Web-Welcome" server header into every response
+// Initialize Zero Ad Network site instance once at startup
+const site = Site({
+  clientId: process.env.ZERO_AD_CLIENT_ID || "DEMO-Z2CclA8oXIT1e0Qmq",
+  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
+  cacheConfig: {
+    enabled: true,
+    ttl: 10000,
+    maxSize: 500,
+  },
+});
+
+// Hook: Set Welcome Header and parse user tokens
+fastify.addHook("onRequest", async (request, reply) => {
+  // Set Welcome Header
   reply.header(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE);
 
-  // Parse the incoming user token from the client header
-  // Attach parsed token data to request for downstream use
-  request.tokenContext = site.parseClientToken(request.headers[site.CLIENT_HEADER_NAME]);
+  // Parse token from request header
+  request.tokenContext = await site.parseClientToken(request.headers[site.CLIENT_HEADER_NAME]);
 });
 
-// -----------------------------------------------------------------------------
-// Routes
-// -----------------------------------------------------------------------------
-app.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
-  // Access parsed `tokenContext` for this request
-  reply.type("text/html").send(eta.render("./homepage", { tokenContext: request.tokenContext }));
-});
-
-app.get("/json", async (request: FastifyRequest) => {
-  // Return JSON response with `tokenContext` for API usage
-  return {
-    message: "OK",
+// Homepage route
+fastify.get("/", async (request, reply) => {
+  return reply.view("homepage", {
     tokenContext: request.tokenContext,
+  });
+});
+
+// Premium API endpoint
+fastify.get("/api/premium-data", async (request, reply) => {
+  if (!request.tokenContext.ENABLE_SUBSCRIPTION_ACCESS) {
+    return reply.status(403).send({
+      error: "Premium subscription required",
+      message: "Subscribe to Zero Ad Network to access this endpoint",
+    });
+  }
+
+  return {
+    data: "This is premium content only available to Zero Ad Network subscribers",
+    timestamp: new Date().toISOString(),
   };
 });
 
-// -----------------------------------------------------------------------------
-// Start Fastify server
-// -----------------------------------------------------------------------------
-const port = 8080;
-app.listen({ port }, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Express server listening at port ${port}:
-    · HTML site homepage:           http://localhost:${port}
-    · JSON output of tokenContext:  http://localhost:${port}/token`);
-});
+const PORT = Number(process.env.PORT) || 8080;
+
+try {
+  await fastify.listen({ port: PORT, host: "0.0.0.0" });
+
+  console.log(`
+╔════════════════════════════════════════════════════════════╗
+║  Zero Ad Network - Fastify Example (TypeScript)            ║
+╚════════════════════════════════════════════════════════════╝
+
+Server running at: http://localhost:${PORT}
+
+Routes:
+  • GET /                  - Homepage
+  • GET /api/premium-data  - Premium API endpoint
+
+Features:
+  ✓ TypeScript type safety
+  ✓ Async token parsing with libuv threadpool
+  ✓ Token caching (10s TTL, 500 entries max)
+  ✓ Eta template rendering
+
+Cache Config:
+  • Enabled: true
+  • TTL: 10000ms
+  • Max Size: 500 entries
+  `);
+} catch (err) {
+  fastify.log.error(err);
+  process.exit(1);
+}

@@ -2,7 +2,7 @@ const assert = require("node:assert");
 const { randomUUID } = require("node:crypto");
 const { Site, FEATURE, SERVER_HEADER, CLIENT_HEADER } = require("../dist/index.cjs");
 
-(() => {
+(async () => {
   const clientId = randomUUID();
   const site = Site({
     clientId,
@@ -16,7 +16,7 @@ const { Site, FEATURE, SERVER_HEADER, CLIENT_HEADER } = require("../dist/index.c
   const validHeaderValue =
     "AbXze/EaFy9pEwAAAA==.hQHwRDR4i8wCV8+gYUxgFGd2yXHUMORnhetz+5Aloc84d3vz1dyGi3GDZ5Y4USc2RemCzYaKLltsi+Iu6NJMAQ==";
 
-  const tokenContext = site.parseClientToken(validHeaderValue);
+  const tokenContext = await site.parseClientToken(validHeaderValue);
   assert.deepEqual(tokenContext, {
     HIDE_ADVERTISEMENTS: false,
     HIDE_COOKIE_CONSENT_SCREEN: false,

@@ -19,33 +19,36 @@ describe("Client Headers", () => {
   });
 
   describe("decodeClientHeader()", () => {
-    test("should generate a valid header value", () => {
+    test("should generate a valid header value", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
       const features = [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS];
 
-      const headerValue = encodeClientHeader({ version: CURRENT_PROTOCOL_VERSION, expiresAt, features }, privateKey);
+      const headerValue = await encodeClientHeader(
+        { version: CURRENT_PROTOCOL_VERSION, expiresAt, features },
+        privateKey
+      );
 
       expect(typeof headerValue).toBe("string");
 
-      expect(decodeClientHeader(headerValue, publicKey)).toEqual({
+      expect(await decodeClientHeader(headerValue, publicKey)).toEqual({
         expiresAt: new Date(Math.floor(expiresAt.getTime() / 1000) * 1000),
         version: CURRENT_PROTOCOL_VERSION,
         flags: 3,
       });
     });
 
-    test("should include `clientId` when client token contains it", () => {
+    test("should include `clientId` when client token contains it", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
       const features: FEATURE[] = [];
 
-      const headerValue = encodeClientHeader(
+      const headerValue = await encodeClientHeader(
         { version: CURRENT_PROTOCOL_VERSION, expiresAt, features, clientId },
         privateKey
       );
 
       expect(typeof headerValue).toBe("string");
 
-      expect(decodeClientHeader(headerValue, publicKey)).toEqual({
+      expect(await decodeClientHeader(headerValue, publicKey)).toEqual({
         expiresAt: new Date(Math.floor(expiresAt.getTime() / 1000) * 1000),
         version: CURRENT_PROTOCOL_VERSION,
         clientId,
@@ -53,39 +56,48 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should generate a valid header value with expired token", () => {
+    test("should generate a valid header value with expired token", async () => {
       const expiresAt = new Date(Date.now() - 24 * 3600 * 1000);
       const features = [FEATURE.CLEAN_WEB];
 
-      const headerValue = encodeClientHeader({ version: CURRENT_PROTOCOL_VERSION, expiresAt, features }, privateKey);
+      const headerValue = await encodeClientHeader(
+        { version: CURRENT_PROTOCOL_VERSION, expiresAt, features },
+        privateKey
+      );
 
       expect(typeof headerValue).toBe("string");
 
-      expect(decodeClientHeader(headerValue, publicKey)).toEqual({
+      expect(await decodeClientHeader(headerValue, publicKey)).toEqual({
         expiresAt: new Date(Math.floor(expiresAt.getTime() / 1000) * 1000),
         version: CURRENT_PROTOCOL_VERSION,
         flags: 1,
       });
     });
 
-    test("should parse as undefined on a forged header value", () => {
+    test("should parse as undefined on a forged header value", async () => {
       const expiresAt = new Date(Date.now() - 24 * 3600 * 1000);
       const features = [FEATURE.CLEAN_WEB];
 
-      const headerValue = encodeClientHeader({ version: CURRENT_PROTOCOL_VERSION, expiresAt, features }, privateKey);
+      const headerValue = await encodeClientHeader(
+        { version: CURRENT_PROTOCOL_VERSION, expiresAt, features },
+        privateKey
+      );
 
       expect(typeof headerValue).toBe("string");
-      expect(decodeClientHeader(headerValue, ZEROAD_NETWORK_PUBLIC_KEY)).toBeUndefined();
+      expect(await decodeClientHeader(headerValue, ZEROAD_NETWORK_PUBLIC_KEY)).toBeUndefined();
     });
   });
 
   describe("parseClientToken()", () => {
-    test("should construct correct output when token and site both have CLEAN_WEB feature", () => {
+    test("should construct correct output when token and site both have CLEAN_WEB feature", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
       const features = [FEATURE.CLEAN_WEB];
-      const headerValue = encodeClientHeader({ version: CURRENT_PROTOCOL_VERSION, expiresAt, features }, privateKey);
+      const headerValue = await encodeClientHeader(
+        { version: CURRENT_PROTOCOL_VERSION, expiresAt, features },
+        privateKey
+      );
 
-      const tokenContext = parseClientToken(headerValue, { clientId, publicKey, features });
+      const tokenContext = await parseClientToken(headerValue, { clientId, publicKey, features });
       expect(tokenContext).toEqual({
         HIDE_ADVERTISEMENTS: true,
         HIDE_COOKIE_CONSENT_SCREEN: true,
@@ -96,12 +108,15 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token and site both have ONE_PASS feature", () => {
+    test("should construct correct output when token and site both have ONE_PASS feature", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
       const features = [FEATURE.ONE_PASS];
-      const headerValue = encodeClientHeader({ version: CURRENT_PROTOCOL_VERSION, expiresAt, features }, privateKey);
+      const headerValue = await encodeClientHeader(
+        { version: CURRENT_PROTOCOL_VERSION, expiresAt, features },
+        privateKey
+      );
 
-      const tokenContext = parseClientToken(headerValue, { clientId, publicKey, features });
+      const tokenContext = await parseClientToken(headerValue, { clientId, publicKey, features });
       expect(tokenContext).toEqual({
         HIDE_ADVERTISEMENTS: false,
         HIDE_COOKIE_CONSENT_SCREEN: false,
@@ -112,12 +127,15 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token and site both have CLEAN_WEB and ONE_PASS features", () => {
+    test("should construct correct output when token and site both have CLEAN_WEB and ONE_PASS features", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
       const features = [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS];
-      const headerValue = encodeClientHeader({ version: CURRENT_PROTOCOL_VERSION, expiresAt, features }, privateKey);
+      const headerValue = await encodeClientHeader(
+        { version: CURRENT_PROTOCOL_VERSION, expiresAt, features },
+        privateKey
+      );
 
-      const tokenContext = parseClientToken(headerValue, {
+      const tokenContext = await parseClientToken(headerValue, {
         clientId,
         publicKey,
         features,
@@ -132,14 +150,14 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token has CLEAN_WEB and site has ONE_PASS feature", () => {
+    test("should construct correct output when token has CLEAN_WEB and site has ONE_PASS feature", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
-      const headerValue = encodeClientHeader(
+      const headerValue = await encodeClientHeader(
         { version: CURRENT_PROTOCOL_VERSION, expiresAt, features: [FEATURE.CLEAN_WEB] },
         privateKey
       );
 
-      const tokenContext = parseClientToken(headerValue, {
+      const tokenContext = await parseClientToken(headerValue, {
         clientId,
         publicKey,
         features: [FEATURE.ONE_PASS],
@@ -155,14 +173,14 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token has ONE_PASS and site has CLEAN_WEB feature", () => {
+    test("should construct correct output when token has ONE_PASS and site has CLEAN_WEB feature", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
-      const headerValue = encodeClientHeader(
+      const headerValue = await encodeClientHeader(
         { version: CURRENT_PROTOCOL_VERSION, expiresAt, features: [FEATURE.ONE_PASS] },
         privateKey
       );
 
-      const tokenContext = parseClientToken(headerValue, {
+      const tokenContext = await parseClientToken(headerValue, {
         clientId,
         publicKey,
         features: [FEATURE.CLEAN_WEB],
@@ -178,14 +196,14 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token has both CLEAN_WEB and ONE_PASS but site has CLEAN_WEB feature only", () => {
+    test("should construct correct output when token has both CLEAN_WEB and ONE_PASS but site has CLEAN_WEB feature only", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
-      const headerValue = encodeClientHeader(
+      const headerValue = await encodeClientHeader(
         { version: CURRENT_PROTOCOL_VERSION, expiresAt, features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS] },
         privateKey
       );
 
-      const tokenContext = parseClientToken(headerValue, {
+      const tokenContext = await parseClientToken(headerValue, {
         clientId,
         publicKey,
         features: [FEATURE.CLEAN_WEB],
@@ -201,14 +219,14 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token has both CLEAN_WEB and ONE_PASS but site has ONE_PASS feature only", () => {
+    test("should construct correct output when token has both CLEAN_WEB and ONE_PASS but site has ONE_PASS feature only", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
-      const headerValue = encodeClientHeader(
+      const headerValue = await encodeClientHeader(
         { version: CURRENT_PROTOCOL_VERSION, expiresAt, features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS] },
         privateKey
       );
 
-      const tokenContext = parseClientToken(headerValue, {
+      const tokenContext = await parseClientToken(headerValue, {
         clientId,
         publicKey,
         features: [FEATURE.ONE_PASS],
@@ -224,12 +242,15 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token has no features while site supports all features", () => {
+    test("should construct correct output when token has no features while site supports all features", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
       const features: FEATURE[] = [];
-      const headerValue = encodeClientHeader({ version: CURRENT_PROTOCOL_VERSION, expiresAt, features }, privateKey);
+      const headerValue = await encodeClientHeader(
+        { version: CURRENT_PROTOCOL_VERSION, expiresAt, features },
+        privateKey
+      );
 
-      const tokenContext = parseClientToken(headerValue, {
+      const tokenContext = await parseClientToken(headerValue, {
         clientId,
         publicKey,
         features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
@@ -244,15 +265,15 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token has clientId and server's clientId match", () => {
+    test("should construct correct output when token has clientId and server's clientId match", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
       const features: FEATURE[] = [FEATURE.CLEAN_WEB];
-      const headerValue = encodeClientHeader(
+      const headerValue = await encodeClientHeader(
         { version: CURRENT_PROTOCOL_VERSION, expiresAt, features, clientId },
         privateKey
       );
 
-      const tokenContext = parseClientToken(headerValue, { clientId, publicKey, features });
+      const tokenContext = await parseClientToken(headerValue, { clientId, publicKey, features });
       expect(tokenContext).toEqual({
         HIDE_ADVERTISEMENTS: true,
         HIDE_COOKIE_CONSENT_SCREEN: true,
@@ -263,10 +284,10 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token has clientId and server's clientId do not match", () => {
+    test("should construct correct output when token has clientId and server's clientId do not match", async () => {
       const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
       const features: FEATURE[] = [FEATURE.CLEAN_WEB];
-      const headerValue = encodeClientHeader(
+      const headerValue = await encodeClientHeader(
         { version: CURRENT_PROTOCOL_VERSION, expiresAt, features, clientId },
         privateKey
       );
@@ -274,7 +295,7 @@ describe("Client Headers", () => {
       const differentClientId = randomUUID();
       expect(clientId).not.toEqual(differentClientId);
 
-      const tokenContext = parseClientToken(headerValue, { clientId: differentClientId, publicKey, features });
+      const tokenContext = await parseClientToken(headerValue, { clientId: differentClientId, publicKey, features });
       expect(tokenContext).toEqual({
         HIDE_ADVERTISEMENTS: false,
         HIDE_COOKIE_CONSENT_SCREEN: false,
@@ -285,15 +306,15 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should construct correct output when token is expired but clientId and server's clientId match", () => {
+    test("should construct correct output when token is expired but clientId and server's clientId match", async () => {
       const expiresAt = new Date(Date.now() - 24 * 3600 * 1000);
       const features: FEATURE[] = [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS];
-      const headerValue = encodeClientHeader(
+      const headerValue = await encodeClientHeader(
         { version: CURRENT_PROTOCOL_VERSION, expiresAt, features, clientId },
         privateKey
       );
 
-      const tokenContext = parseClientToken(headerValue, { clientId, publicKey, features });
+      const tokenContext = await parseClientToken(headerValue, { clientId, publicKey, features });
       expect(tokenContext).toEqual({
         HIDE_ADVERTISEMENTS: false,
         HIDE_COOKIE_CONSENT_SCREEN: false,
@@ -304,8 +325,8 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should not throw if array of strings is provided", () => {
-      const tokenContext = parseClientToken(["some-value", "another-value"], {
+    test("should not throw if array of strings is provided", async () => {
+      const tokenContext = await parseClientToken(["some-value", "another-value"], {
         clientId,
         publicKey,
         features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
@@ -321,8 +342,8 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should not throw if an empty array is provided", () => {
-      const tokenContext = parseClientToken([], {
+    test("should not throw if an empty array is provided", async () => {
+      const tokenContext = await parseClientToken([], {
         clientId,
         publicKey,
         features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
@@ -338,8 +359,8 @@ describe("Client Headers", () => {
       });
     });
 
-    test("should not throw if an undefined param is provided", () => {
-      const tokenContext = parseClientToken(undefined, {
+    test("should not throw if an undefined param is provided", async () => {
+      const tokenContext = await parseClientToken(undefined, {
         clientId,
         publicKey,
         features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],

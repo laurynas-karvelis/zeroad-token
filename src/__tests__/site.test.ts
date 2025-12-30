@@ -28,18 +28,18 @@ describe("Site()", () => {
     expect(site.CLIENT_HEADER_NAME).toEqual(CLIENT_HEADER.HELLO.toLowerCase());
   });
 
-  test("should call parseClientToken() correctly", () => {
+  test("should call parseClientToken() correctly", async () => {
     const features = [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS];
     const site = Site({ clientId, features });
 
     const expiresAt = new Date(Date.now() + 24 * 3600 * 1000);
-    const clientHeaderValue = encodeClientHeader(
+    const clientHeaderValue = await encodeClientHeader(
       { version: CURRENT_PROTOCOL_VERSION, expiresAt, features: [FEATURE.CLEAN_WEB] },
       privateKey
     );
 
     spyOn(clientHeader, "parseClientToken");
-    const tokenContext = site.parseClientToken(clientHeaderValue);
+    const tokenContext = await site.parseClientToken(clientHeaderValue);
 
     expect(clientHeader.parseClientToken).toHaveBeenCalledTimes(1);
     expect(clientHeader.parseClientToken).toHaveBeenCalledWith(clientHeaderValue, { clientId, features });

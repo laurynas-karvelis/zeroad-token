@@ -40,5 +40,5 @@ export function assert(value: unknown, message: string) {
   if (!value) throw new Error(message);
 }
 
-export const hasFlag = (bit: number, flags: number) => Boolean(bit & flags);
+export const hasFlag = (bit: number, flags: number) => (bit & flags) !== 0;
 export const setFlags = (features: FEATURE[] = []) => features.reduce((acc, feature) => acc | feature, 0);

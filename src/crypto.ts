@@ -23,14 +23,26 @@ export function generateKeys() {
   };
 }
 
-export function sign(data: ArrayBuffer, privateKey: string) {
+export function sign(data: ArrayBuffer, privateKey: string): Promise<Buffer> {
   const key = importPrivateKey(privateKey);
-  return nodeSign(null, Buffer.from(data), key);
+
+  return new Promise((resolve, reject) => {
+    nodeSign(null, Buffer.from(data), key, (err, result: Buffer) => {
+      if (err) reject(err);
+      else resolve(result);
+    });
+  });
 }
 
-export function verify(data: ArrayBuffer, signature: ArrayBuffer, publicKey: string) {
+export function verify(data: ArrayBuffer, signature: ArrayBuffer, publicKey: string): Promise<boolean> {
   const key = importPublicKey(publicKey);
-  return nodeVerify(null, Buffer.from(data), key, Buffer.from(signature));
+
+  return new Promise((resolve, reject) => {
+    nodeVerify(null, Buffer.from(data), key, Buffer.from(signature), (err, result) => {
+      if (err) reject(err);
+      else resolve(result);
+    });
+  });
 }
 
 export const nonce = (size: number) => new Uint8Array(randomBytes(size));
