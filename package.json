@@ -1,6 +1,6 @@
 {
   "name": "@zeroad.network/token",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "license": "Apache-2.0",
   "repository": "github:laurynas-karvelis/zeroad-token-typescript",
   "homepage": "https://zeroad.network",
@@ -10,7 +10,8 @@
     "url": "http://zeroad.network"
   },
   "files": [
-    "./dist/**/*"
+    "./dist/**/*",
+    "SKILLS.md"
   ],
   "keywords": [
     "zero ad network",
