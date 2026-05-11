@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test"
-import { randomUUID } from "crypto"
+import { randomUUID } from "node:crypto"
 import { CURRENT_PROTOCOL_VERSION, FEATURE, ZEROAD_NETWORK_PUBLIC_KEY } from "../constants"
 import { generateKeys } from "../crypto"
 import { decodeClientHeader, encodeClientHeader, parseClientToken } from "../headers/client"

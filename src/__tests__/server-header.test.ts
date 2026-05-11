@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test"
-import { randomUUID } from "crypto"
+import { randomUUID } from "node:crypto"
 import { FEATURE } from "../constants"
 import { decodeServerHeader, encodeServerHeader } from "../headers/server"
 
