@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Daily Mirror — Front Page (Demo)</title>
+    <title>Daily Mirror  -  Front Page (Demo)</title>
 
     <!-- Bootstrap (Cloudflare CDN) -->
     <link
@@ -174,7 +174,7 @@
     <!-- Top banner ad -->
     <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
       <div class="container my-3">
-        <div class="ad-block ad-rectangle text-center py-3">HEADER AD — 970x90 (placeholder)</div>
+        <div class="ad-block ad-rectangle text-center py-3">HEADER AD  -  970x90 (placeholder)</div>
       </div>
     <% } %>
 
@@ -213,8 +213,8 @@
               </div>
               <div class="col-md-5 d-flex flex-column justify-content-between">
                 <div>
-                  <h1 class="h3">Breaking: Major Event Unfolds — What We Know</h1>
-                  <p class="meta mb-2">By Jane Doe — Dec 12, 2025 • 14:32</p>
+                  <h1 class="h3">Breaking: Major Event Unfolds  -  What We Know</h1>
+                  <p class="meta mb-2">By Jane Doe  -  Dec 12, 2025 • 14:32</p>
                   <p class="mb-3">
                     Short summary paragraph that reads like top-front-page news. This is crafted to look like a real
                     lead story summary.
@@ -285,7 +285,7 @@
               <!-- Mid-page ad -->
               <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
                 <div class="my-3">
-                  <div class="ad-block text-center py-4">MID-PAGE AD — 300x250</div>
+                  <div class="ad-block text-center py-4">MID-PAGE AD  -  300x250</div>
                 </div>
               <% } %>
 
@@ -318,7 +318,7 @@
               <!-- Inline wide ad -->
               <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
                 <div class="my-3">
-                  <div class="ad-block text-center py-4">INLINE WIDE AD — 728x90</div>
+                  <div class="ad-block text-center py-4">INLINE WIDE AD  -  728x90</div>
                 </div>
               <% } %>
             </div>
@@ -350,15 +350,15 @@ console.log("I'm collecting your sensitive data about you");</pre>
                 <div class="article-card mb-3">
                   <h6 class="mb-2">Trending</h6>
                   <ol class="ps-3">
-                    <li class="mb-2"><strong>Leader's Statement</strong> — World</li>
-                    <li class="mb-2"><strong>Local Hero</strong> — Community</li>
-                    <li class="mb-2"><strong>Weather Alert</strong> — Updates</li>
+                    <li class="mb-2"><strong>Leader's Statement</strong>  -  World</li>
+                    <li class="mb-2"><strong>Local Hero</strong>  -  Community</li>
+                    <li class="mb-2"><strong>Weather Alert</strong>  -  Updates</li>
                   </ol>
                 </div>
 
                 <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
                   <div class="article-card mb-3 ad-rectangle ad-block text-center">
-                    SIDEBAR AD — 300x600 (placeholder)
+                    SIDEBAR AD  -  300x600 (placeholder)
                   </div>
                 <% } %>
 
@@ -393,7 +393,7 @@ console.log("I'm collecting your sensitive data about you");</pre>
 
                 <% if (!it.tokenContext?.HIDE_ADVERTISEMENTS) { %>
                   <div class="article-card mb-3 ad-rectangle ad-block text-center">
-                    SIDEBAR AD — 300x600 (placeholder)
+                    SIDEBAR AD  -  300x600 (placeholder)
                   </div>
                 <% } %>
 
@@ -721,7 +721,7 @@ console.log("I'm collecting your sensitive data about you");</pre>
         if (offerModalEl) {
           const modal = new bootstrap.Modal(offerModalEl, { backdrop: true, keyboard: true });
           
-          // Prevent actual submission — leads nowhere by design
+          // Prevent actual submission  -  leads nowhere by design
           document.getElementById("offer-form").addEventListener("submit", function (e) {
             e.preventDefault();
             // Visual feedback: flash a message inside modal (no network call)
