@@ -77,7 +77,7 @@
   "devDependencies": {
     "@types/bun": "^1.3.14",
     "@types/node": "^25.9.1",
-    "pkgroll": "^2.27.0",
+    "pkgroll": "^2.27.1",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
   }
