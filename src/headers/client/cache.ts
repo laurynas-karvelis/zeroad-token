@@ -43,23 +43,41 @@ interface CacheEntry {
   effectiveExpiry: number // `min()` of cache TTL expiry and token `expiresAt`
   accessCount: number
   timestamp: number
+  publicKey: string // The key the entry was verified against - a hit under a different key must not be reused
 }
 
 export const headerCache = new Map<string, CacheEntry>()
+
+function isLessValuable(candidate: CacheEntry, current: CacheEntry): boolean {
+  // Least valuable first: lowest access count (LFU), oldest entry breaking ties (LRU)
+  if (candidate.accessCount !== current.accessCount) return candidate.accessCount < current.accessCount
+  return candidate.timestamp < current.timestamp
+}
 
 export function trimCache(): void {
   if (headerCache.size <= cacheConfig.maxSize) return
 
   const entriesToRemove = headerCache.size - cacheConfig.maxSize
-  const entries = Array.from(headerCache.entries())
 
-  // Sort by access count (LFU) and timestamp (LRU) - remove least valuable
-  entries.sort((a, b) => {
-    if (a[1].accessCount !== b[1].accessCount) {
-      return a[1].accessCount - b[1].accessCount
+  // The steady state is a single eviction per insert once the cache is full, which a linear scan
+  // for the least valuable entry handles without copying and sorting the whole map every time
+  if (entriesToRemove === 1) {
+    let leastValuableKey: string | undefined
+    let leastValuable: CacheEntry | undefined
+
+    for (const [key, entry] of headerCache) {
+      if (!leastValuable || isLessValuable(entry, leastValuable)) {
+        leastValuableKey = key
+        leastValuable = entry
+      }
     }
-    return a[1].timestamp - b[1].timestamp
-  })
+
+    if (leastValuableKey !== undefined) headerCache.delete(leastValuableKey)
+    return
+  }
+
+  const entries = Array.from(headerCache.entries())
+  entries.sort((a, b) => a[1].accessCount - b[1].accessCount || a[1].timestamp - b[1].timestamp)
 
   for (let i = 0; i < entriesToRemove; i++) {
     headerCache.delete(entries[i][0])

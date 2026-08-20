@@ -6,7 +6,9 @@ import { encodeServerHeader } from "./headers/server"
 export type SiteOptions = {
   clientId: string
   features: FEATURE[]
-  cacheConfig?: CacheConfig
+  // Partial, mirroring `configureCaching()` - and global: caching is a module-level singleton, so the
+  // last `Site()` constructed in a process decides the configuration for every site in it
+  cacheConfig?: Partial<CacheConfig>
 }
 
 export function Site(options: SiteOptions) {

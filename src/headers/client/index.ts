@@ -9,6 +9,17 @@ const NONCE_BYTES = 4
 const SEPARATOR = "."
 const UINT32_BYTES = 4
 
+const EXPIRES_AT_OFFSET = VERSION_BYTES + NONCE_BYTES
+const FLAGS_OFFSET = EXPIRES_AT_OFFSET + UINT32_BYTES
+const PREFIX_BYTES = FLAGS_OFFSET + UINT32_BYTES // Everything up to the optional `clientId` suffix
+const MAX_UINT32 = 0xffffffff
+
+const CLEANUP_PARSE_INTERVAL = 100
+let parsesSinceLastCleanup = 0
+
+const textEncoder = new TextEncoder()
+const textDecoder = new TextDecoder()
+
 export type FEATURE_ACTION =
   | "HIDE_ADVERTISEMENTS"
   | "HIDE_COOKIE_CONSENT_SCREEN"
@@ -64,23 +75,28 @@ export async function parseClientToken(
   }
 
   const headerValueAsString = Array.isArray(headerValue) ? headerValue[0] : headerValue
+  const publicKey = options.publicKey || ZEROAD_NETWORK_PUBLIC_KEY
   const now = Date.now()
+  const useCache = cacheConfig.enabled && !options.bypassCache
 
-  if (cacheConfig.enabled && !options.bypassCache) {
+  if (useCache) {
     const cached = headerCache.get(headerValueAsString)
 
-    if (cached && cached.effectiveExpiry > now) {
-      cached.accessCount++
-      return buildContext(cached.data, options, now)
-    }
     if (cached) {
+      // An entry verified against a different public key says nothing about this call - reusing it
+      // would let a token signed by any previously trusted key through under the current one
+      if (cached.effectiveExpiry > now && cached.publicKey === publicKey) {
+        cached.accessCount++
+        return buildContext(cached.data, options, now)
+      }
+
       headerCache.delete(headerValueAsString)
     }
   }
 
-  const data = await decodeClientHeader(headerValueAsString, options.publicKey || ZEROAD_NETWORK_PUBLIC_KEY)
+  const data = await decodeClientHeader(headerValueAsString, publicKey)
 
-  if (cacheConfig.enabled && !options.bypassCache) {
+  if (useCache) {
     const cacheTTLExpiry = now + cacheConfig.ttl
     const tokenExpiry = data?.expiresAt.getTime() ?? 0
     const effectiveExpiry = tokenExpiry > 0 ? Math.min(cacheTTLExpiry, tokenExpiry) : cacheTTLExpiry
@@ -90,10 +106,13 @@ export async function parseClientToken(
       timestamp: now,
       accessCount: 1,
       effectiveExpiry,
+      publicKey,
     })
 
-    // Periodically clean expired entries (every 100th parse)
-    if (headerCache.size > 0 && headerCache.size % 100 === 0) {
+    // Periodically clean expired entries. Counting parses rather than testing `headerCache.size`:
+    // `trimCache()` pins the size at `maxSize`, so a size-based check stops firing once the cache fills
+    if (++parsesSinceLastCleanup >= CLEANUP_PARSE_INTERVAL) {
+      parsesSinceLastCleanup = 0
       cleanExpiredEntries(now)
     }
 
@@ -179,24 +198,19 @@ export async function decodeClientHeader(
     const version = dataBytes[0]
 
     if (version === PROTOCOL_VERSION.V_1) {
-      const expectedMinLength = VERSION_BYTES + NONCE_BYTES + UINT32_BYTES * 2
-
-      if (dataBytes.byteLength < expectedMinLength) {
+      if (dataBytes.byteLength < PREFIX_BYTES) {
         throw new Error("Invalid data length")
       }
 
       const view = new DataView(dataBytes.buffer, dataBytes.byteOffset, dataBytes.byteLength)
-      const expiresAtOffset = VERSION_BYTES + NONCE_BYTES
-      const flagsOffset = expiresAtOffset + UINT32_BYTES
 
-      const expiresAt = view.getUint32(expiresAtOffset, true)
-      const flags = view.getUint32(flagsOffset, true)
+      const expiresAt = view.getUint32(EXPIRES_AT_OFFSET, true)
+      const flags = view.getUint32(FLAGS_OFFSET, true)
 
       let clientId: string | undefined
-      if (dataBytes.byteLength > expectedMinLength) {
+      if (dataBytes.byteLength > PREFIX_BYTES) {
         // The `clientId` is included
-        const clientIdBytes = dataBytes.subarray(expectedMinLength)
-        clientId = new TextDecoder().decode(clientIdBytes)
+        clientId = textDecoder.decode(dataBytes.subarray(PREFIX_BYTES))
       }
 
       return {
@@ -224,32 +238,27 @@ type EncodeData = {
 }
 
 export async function encodeClientHeader(data: EncodeData, privateKey: string) {
-  const payload = mergeByteArrays([
-    new Uint8Array([data.version]),
-    new Uint8Array(nonce(NONCE_BYTES)),
-    new Uint32Array([Math.floor(data.expiresAt.getTime() / 1000)]),
-    new Uint32Array([setFlags(data.features)]),
-    ...(data.clientId?.length ? [new Uint8Array(new TextEncoder().encode(data.clientId))] : []),
-  ])
+  const expiresAtSeconds = Math.floor(data.expiresAt.getTime() / 1000)
 
-  return [toBase64(payload), toBase64(new Uint8Array(await sign(payload.buffer, privateKey)))].join(SEPARATOR)
-}
-
-function mergeByteArrays(arrays: (Uint8Array | Uint32Array)[]) {
-  const totalLength = arrays.reduce((sum, a) => sum + a.byteLength, 0)
-  const data = new Uint8Array(totalLength)
-
-  let offset = 0
-  for (const arr of arrays) {
-    let bytes: Uint8Array
-
-    if (arr instanceof Uint8Array) bytes = arr
-    else if (arr instanceof Uint32Array) bytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength)
-    else throw new Error("Unsupported type")
-
-    data.set(bytes, offset)
-    offset += bytes.byteLength
+  // The wire format carries the expiry as an unsigned 32-bit second count. Out of range values used to
+  // wrap silently, which turned a pre-epoch date into a token valid for decades
+  if (!Number.isFinite(expiresAtSeconds) || expiresAtSeconds < 0 || expiresAtSeconds > MAX_UINT32) {
+    throw new Error("The `expiresAt` value must be a valid date between 1970-01-01 and 2106-02-07")
   }
 
-  return data
+  const clientIdBytes = data.clientId?.length ? textEncoder.encode(data.clientId) : undefined
+  const payload = new Uint8Array(PREFIX_BYTES + (clientIdBytes?.byteLength ?? 0))
+
+  payload[0] = data.version
+  payload.set(nonce(NONCE_BYTES), VERSION_BYTES)
+
+  // Both numeric fields are written little-endian explicitly: a `Uint32Array` byte view would use the
+  // host's endianness, while the decoder here and the other language SDKs always read little-endian
+  const view = new DataView(payload.buffer)
+  view.setUint32(EXPIRES_AT_OFFSET, expiresAtSeconds, true)
+  view.setUint32(FLAGS_OFFSET, setFlags(data.features), true)
+
+  if (clientIdBytes) payload.set(clientIdBytes, PREFIX_BYTES)
+
+  return [toBase64(payload), toBase64(new Uint8Array(await sign(payload.buffer, privateKey)))].join(SEPARATOR)
 }

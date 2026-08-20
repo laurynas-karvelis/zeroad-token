@@ -37,13 +37,19 @@ export function decodeServerHeader(headerValue: string | null | undefined): Welc
     assert(parts.length === 3, "Invalid header value format")
 
     const [clientId, protocolVersion, flags] = parts
+    assert(clientId.length > 0, "Invalid header value format")
     assert(Object.values(PROTOCOL_VERSION).includes(Number(protocolVersion)), "Invalid or unsupported protocol version")
 
-    assert(Number(flags).toFixed(0).toString() === flags, "Invalid flags number")
+    const flagsNumber = Number(flags)
+
+    // `Number("-1").toFixed(0)` round-trips, so a negative value would pass the format check and then
+    // light up every feature bit, and `Number("Infinity")` round-trips too - both are rejected here
+    assert(Number.isSafeInteger(flagsNumber) && flagsNumber >= 0, "Invalid flags number")
+    assert(flagsNumber.toFixed(0) === flags, "Invalid flags number")
 
     const features: (keyof typeof FEATURE)[] = []
     for (const [feature, bit] of FEATURE_MAP) {
-      if (hasFlag(Number(flags), bit)) features.push(feature)
+      if (hasFlag(flagsNumber, bit)) features.push(feature)
     }
 
     return {
