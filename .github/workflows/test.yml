@@ -51,12 +51,12 @@ jobs:
       - name: Run .mjs file
         run: |
           echo "Running ESM import test on ${{ matrix.node-version }}"
-          node smoke-tests/import.test.mjs
+          node smoke-tests/import.mjs
 
       - name: Run .cjs file
         run: |
           echo "Running CJS require test on ${{ matrix.node-version }}"
-          node smoke-tests/require.test.cjs
+          node smoke-tests/require.cjs
 
   bun-smoke-tests:
     runs-on: ubuntu-latest
@@ -82,12 +82,12 @@ jobs:
       - name: Run .mjs file
         run: |
           echo "Running ESM import test on ${{ matrix.bun-version }}"
-          bun run smoke-tests/import.test.mjs
+          bun run smoke-tests/import.mjs
 
       - name: Run .cjs file
         run: |
           echo "Running CJS require test on ${{ matrix.bun-version }}"
-          bun run smoke-tests/require.test.cjs
+          bun run smoke-tests/require.cjs
 
   deno-smoke-tests:
     runs-on: ubuntu-latest
@@ -118,9 +118,9 @@ jobs:
       - name: Run .mjs file
         run: |
           echo "Running ESM import test on ${{ matrix.deno-version }}"
-          deno run smoke-tests/import.test.mjs
+          deno run smoke-tests/import.mjs
 
       - name: Run .cjs file
         run: |
           echo "Running CJS require test on ${{ matrix.deno-version }}"
-          deno run --allow-read smoke-tests/require.test.cjs
+          deno run --allow-read smoke-tests/require.cjs

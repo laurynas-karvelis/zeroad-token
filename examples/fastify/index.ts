@@ -1,99 +1,61 @@
 /* eslint-disable no-console */
 import path from "node:path"
-import fastifyView from "@fastify/view"
-import { FEATURE, Site, type TokenContext } from "@zeroad.network/token"
+import { createPublisher, type VerificationResult } from "@zeroad.network/token"
 import { Eta } from "eta"
 import Fastify from "fastify"
 
-const fastify = Fastify({
-  logger: true,
-})
-
-// Register Eta view engine
-await fastify.register(fastifyView, {
-  engine: {
-    eta: new Eta({ views: path.join(import.meta.dirname, "../templates") }),
-  },
-  root: "../templates",
-})
-
-// Extend Fastify request type
 declare module "fastify" {
   interface FastifyRequest {
-    tokenContext: TokenContext
+    visitor: VerificationResult
   }
 }
 
-// Initialize Zero Ad Network site instance once at startup
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID || "DEMO-Z2CclA8oXIT1e0Qmq",
-  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
-  cacheConfig: {
-    enabled: true,
-    ttl: 10000,
-    maxSize: 500,
-  },
+const fastify = Fastify({ logger: false })
+const eta = new Eta({ views: path.join(import.meta.dirname, "../templates") })
+
+// Create once at startup, reuse for the life of the process
+const publisher = createPublisher({
+  publisherId: process.env.ZERO_AD_PUBLISHER_ID || "pub_DEMO7Fq2xR9nKd",
+  hostnames: process.env.ZERO_AD_HOSTNAMES?.split(",") || ["localhost", "example.com"],
 })
 
-// Hook: Set Welcome Header and parse user tokens
 fastify.addHook("onRequest", async (request, reply) => {
-  // Set Welcome Header
-  reply.header(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE)
+  // Announce that this site takes part, and who to credit for the visit
+  reply.header(...publisher.header)
 
-  // Parse token from request header
-  request.tokenContext = await site.parseClientToken(request.headers[site.CLIENT_HEADER_NAME])
+  // Verify the visitor's token against the host they asked for
+  request.visitor = await publisher.verify(request.headers[publisher.tokenHeaderNameLowercase], request.headers.host)
 })
 
-// Homepage route
 fastify.get("/", async (request, reply) => {
-  return reply.view("homepage", {
-    tokenContext: request.tokenContext,
-  })
-})
+  const { visitor } = request
 
-// Premium API endpoint
-fastify.get("/api/premium-data", async (request, reply) => {
-  if (!request.tokenContext.ENABLE_SUBSCRIPTION_ACCESS) {
-    return reply.status(403).send({
-      error: "Premium subscription required",
-      message: "Subscribe to Zero Ad Network to access this endpoint",
+  return reply.type("text/html").send(
+    eta.render("homepage", {
+      subscriber: visitor.subscriber,
+      plan: visitor.subscriber ? visitor.planName : null,
+      reason: visitor.subscriber ? null : visitor.reason,
     })
+  )
+})
+
+fastify.get("/api/premium-data", async (request, reply) => {
+  const { visitor } = request
+
+  if (!visitor.subscriber) {
+    // `reason` is for your logs and for debugging an integration - do not leak it to visitors in
+    // production, it tells an attacker exactly which check they failed
+    return reply.code(403).send({ error: "Subscription required", reason: visitor.reason })
   }
 
-  return {
-    data: "This is premium content only available to Zero Ad Network subscribers",
-    timestamp: new Date().toISOString(),
-  }
+  return { data: "Premium content, unlocked for a Zero Ad Network subscriber" }
 })
+
+fastify.get("/internal/token-cache", async () => publisher.cacheStats())
 
 const PORT = Number(process.env.PORT) || 8080
 
-try {
-  await fastify.listen({ port: PORT, host: "0.0.0.0" })
+await fastify.listen({ port: PORT, host: "0.0.0.0" })
 
-  console.log(`
-╔════════════════════════════════════════════════════════════╗
-║  Zero Ad Network - Fastify Example (TypeScript)            ║
-╚════════════════════════════════════════════════════════════╝
-
-Server running at: http://localhost:${PORT}
-
-Routes:
-  • GET /                  - Homepage
-  • GET /api/premium-data  - Premium API endpoint
-
-Features:
-  ✓ TypeScript type safety
-  ✓ Async token parsing with libuv threadpool
-  ✓ Token caching (10s TTL, 500 entries max)
-  ✓ Eta template rendering
-
-Cache Config:
-  • Enabled: true
-  • TTL: 10000ms
-  • Max Size: 500 entries
-  `)
-} catch (err) {
-  fastify.log.error(err)
-  process.exit(1)
-}
+console.log(`Zero Ad Network Fastify example on http://localhost:${PORT}`)
+console.log(`Announcing: ${publisher.headerName}: ${publisher.headerValue}`)

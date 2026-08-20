@@ -1,6 +1,6 @@
 {
   "name": "@zeroad.network/token",
-  "version": "0.14.2",
+  "version": "1.0.0",
   "license": "Apache-2.0",
   "repository": "github:laurynas-karvelis/zeroad-token-typescript",
   "homepage": "https://zeroad.network",
@@ -16,29 +16,30 @@
   "keywords": [
     "zero ad network",
     "zeroad",
-    "zero-ad",
+    "better-web",
     "token",
-    "access-token",
-    "http-header",
-    "welcome-header",
-    "auth",
-    "authorization",
-    "subscription",
-    "feature-flags",
-    "entitlement",
     "ad-free",
     "ads-free",
     "paywall",
+    "subscription",
+    "entitlement",
     "content-access",
+    "http-header",
+    "offline-verification",
+    "ed25519",
+    "privacy",
+    "anonymous-tokens",
+    "origin-binding",
     "middleware",
+    "publisher",
     "typescript",
     "javascript",
     "nodejs",
-    "deno",
     "bun",
+    "deno",
+    "edge",
     "esm",
     "cjs",
-    "web-server",
     "express",
     "fastify",
     "hono"
@@ -61,17 +62,13 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    },
-    "./browser": {
-      "types": "./dist/browser.d.mts",
-      "default": "./dist/browser.mjs"
     }
   },
   "scripts": {
-    "keys:generate": "bun run ./src/tools/cli.ts",
     "prettier": "prettier . --write",
     "build": "pkgroll --target=esnext --target=node18",
-    "test": "bun test ./src"
+    "test": "bun test ./src",
+    "test:smoke": "bun run build && node smoke-tests/import.mjs && node smoke-tests/require.cjs"
   },
   "dependencies": {},
   "devDependencies": {
@@ -80,5 +77,6 @@
     "pkgroll": "^2.27.1",
     "prettier": "^3.9.6",
     "typescript": "^7.0.2"
-  }
+  },
+  "description": "Offline verification of Zero Ad Network subscriber tokens for publisher backends. Zero dependencies."
 }

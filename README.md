@@ -1,747 +1,297 @@
 # @zeroad.network/token
 
-The official TypeScript/JavaScript module for integrating websites with the [Zero Ad Network](https://zeroad.network) platform.
-
-## What is Zero Ad Network?
-
-Zero Ad Network is a browser-based platform that creates a better web experience for both users and content creators:
-
-**For Users:**
-
-- Browse without ads, trackers, cookie consent dialogs, and marketing pop-ups
-- Access paywalled content across multiple sites with a single subscription
-- Support content creators directly through fair revenue distribution
-
-**For Publishers:**
-
-- Generate revenue from users who would otherwise use ad blockers
-- Provide a cleaner user experience while maintaining income
-- Get paid based on actual user engagement with your content
-
-**How It Works:**
-
-1. Users subscribe and install the Zero Ad Network browser extension
-2. The extension sends cryptographically signed tokens to partner sites
-3. Partner sites verify tokens and enable premium features (ad-free, paywall-free)
-4. Monthly revenue is distributed to publishers based on user engagement time
-
-## Features
-
-This module provides:
-
-- ✅ **Zero dependencies** - Lightweight and secure
-- ✅ **Full TypeScript support** - Complete type definitions included
-- ✅ **Cryptographic verification** - ED25519 signature validation using Node.js crypto
-- ✅ **Performance optimized** - Async crypto operations with intelligent caching
-- ✅ **Universal runtime support** - Works with Node.js, Bun, and Deno
-- ✅ **ESM & CommonJS** - Supports both module systems
-
-## Runtime Compatibility
-
-| Runtime | Version | ESM | CJS |
-| :------ | :------ | :-: | :-: |
-| Node.js | 16+     | ✅  | ✅  |
-| Bun     | 1.1.0+  | ✅  | ✅  |
-| Deno    | 2.0.0+  | ✅  | ✅  |
-
-## Installation
+Verify [Zero Ad Network](https://zeroad.network) subscriber tokens in your backend. Offline, in about
+80 microseconds cold and a third of a microsecond cached, with no dependencies and no calls back to us.
 
 ```bash
-# npm
 npm install @zeroad.network/token
-
-# yarn
-yarn add @zeroad.network/token
-
-# pnpm
-pnpm add @zeroad.network/token
-
-# bun
-bun add @zeroad.network/token
-
-# deno
-deno add npm:@zeroad.network/token
 ```
 
-## Quick Start
+---
 
-### 1. Register Your Site
+## The thirty second version
 
-Before implementing, you need to:
+Zero Ad Network subscribers pay a monthly fee and install a browser extension. When one of them visits
+your site, the extension attaches a cryptographically signed token. You verify it locally, and if it
+checks out you owe that visitor a clean page - no ads, no trackers, no cookie dialog, no paywall. Your
+share of their subscription is paid out monthly based on the time they actually spent with you.
 
-1. [Sign up](https://zeroad.network/login) for a Zero Ad Network account
-2. [Register your site](https://zeroad.network/publisher/sites/add) to receive your unique `Client ID`
+Two headers, and this package handles both ends:
 
-### 2. Choose Your Features
+| Direction      | Header                 | Carries                                         |
+| :------------- | :--------------------- | :---------------------------------------------- |
+| You -> visitor | `Better-Web-Publisher` | your publisher ID, so the visit can be credited |
+| Visitor -> you | `Better-Web-Token`     | their signed, origin-bound subscription token   |
 
-Decide which features your site will support:
+---
 
-- **`FEATURE.CLEAN_WEB`**: Remove ads, cookie consent screens, trackers, and marketing dialogs
-- **`FEATURE.ONE_PASS`**: Provide free access to paywalled content and base subscription plans
+## Integrate
 
-### 3. Basic Implementation
+### 1. Register
 
-```typescript
-import express from "express"
-import { Site, FEATURE } from "@zeroad.network/token"
+[Sign up](https://zeroad.network/login), add your site, and copy your **publisher ID**.
 
-const app = express()
+### 2. Create a publisher, once, at startup
 
-// Initialize once at startup - this creates your site instance
-const site = Site({
-  clientId: "YOUR_CLIENT_ID_HERE",
-  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
+```ts
+import { createPublisher } from "@zeroad.network/token"
+
+export const publisher = createPublisher({
+  publisherId: process.env.ZERO_AD_PUBLISHER_ID,
+  hostnames: ["example.com", "www.example.com"],
 })
+```
 
-// Middleware: Inject Welcome Header and parse user tokens
-app.use(async (req, res, next) => {
-  // Tell the browser extension your site participates
-  res.set(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE)
+`hostnames` is every host you serve. It is required, and it matters - see
+[why hostnames are an allowlist](#why-hostnames-are-an-allowlist).
 
-  // Parse the user's subscription token
-  req.tokenContext = await site.parseClientToken(req.get(site.CLIENT_HEADER_NAME))
+### 3. Wire up one middleware
+
+```ts
+app.use(async (request, response, next) => {
+  response.set(...publisher.header)
+
+  response.locals.visitor = await publisher.verify(request.get(publisher.tokenHeaderName), request.get("host"))
 
   next()
 })
-
-// Use token context in your templates
-app.get("/", async (req, res) => {
-  res.render("index", {
-    // Pass token context to control what appears in templates
-    tokenContext: req.tokenContext,
-  })
-})
-
-app.listen(3000)
 ```
 
-### 4. In Your Templates
+### 4. Branch on it
 
-```ejs
-<!-- index.ejs -->
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My Site</title>
-</head>
-<body>
-  <h1>Welcome to My Site</h1>
-
-  <!-- Only show ads to non-subscribers -->
-  <% if (!tokenContext.HIDE_ADVERTISEMENTS) { %>
-    <div class="advertisement">
-      <!-- Ad code here -->
-    </div>
-  <% } %>
-
-  <!-- Only show cookie consent to non-subscribers -->
-  <% if (!tokenContext.HIDE_COOKIE_CONSENT_SCREEN) { %>
-    <div class="cookie-consent">
-      <!-- Cookie consent dialog -->
-    </div>
-  <% } %>
-
-  <!-- Content everyone sees -->
-  <article>
-    <h2>Article Title</h2>
-
-    <!-- Show preview or full content based on subscription -->
-    <% if (tokenContext.DISABLE_CONTENT_PAYWALL) { %>
-      <p>Full article content for Zero Ad Network subscribers...</p>
-    <% } else { %>
-      <p>Article preview... <a href="/subscribe">Subscribe to read more</a></p>
-    <% } %>
-  </article>
-</body>
-</html>
-```
-
-## Token Context
-
-After parsing, the token context contains boolean flags for each feature:
-
-```typescript
-interface TokenContext {
-  // CLEAN_WEB features
-  HIDE_ADVERTISEMENTS: boolean
-  HIDE_COOKIE_CONSENT_SCREEN: boolean
-  HIDE_MARKETING_DIALOGS: boolean
-  DISABLE_NON_FUNCTIONAL_TRACKING: boolean
-
-  // ONE_PASS features
-  DISABLE_CONTENT_PAYWALL: boolean
-  ENABLE_SUBSCRIPTION_ACCESS: boolean
+```ts
+if (response.locals.visitor.subscriber) {
+  // no ads, no trackers, no consent dialog, no paywall
 }
 ```
 
-**Important:** All flags default to `false` for:
+That is the whole integration. Working examples for
+[Express](./examples/express), [Fastify](./examples/fastify) and [Hono](./examples/hono) live in this
+repository.
 
-- Users without subscriptions
-- Expired tokens
-- Invalid/forged tokens
-- Missing tokens
+> Set `Better-Web-Publisher` even on pages where you never read a token. It is how the extension
+> discovers that your site takes part at all, and how visits get attributed to you.
 
-## Advanced Configuration
+---
 
-### Cache Configuration
+## API
 
-The module includes intelligent caching to minimize crypto operations. Configure caching when creating your site instance:
+### `createPublisher(options)`
 
-```typescript
-import { Site, FEATURE } from "@zeroad.network/token"
+| Option                  | Type                 | Default      |                                                              |
+| :---------------------- | :------------------- | :----------- | :----------------------------------------------------------- |
+| `publisherId`           | `string`             | -            | From your dashboard. 1-128 printable ASCII characters.       |
+| `hostnames`             | `string \| string[]` | -            | Every host you serve. Ports, schemes and paths are stripped. |
+| `publicKey`             | `string`             | platform key | Override for staging and tests. Leave alone in production.   |
+| `clockToleranceSeconds` | `number`             | `60`         | Slack on expiry, for servers whose clocks drift.             |
+| `cache`                 | `boolean \| object`  | on           | See [caching](#caching).                                     |
 
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID!,
-  features: [FEATURE.CLEAN_WEB],
-  cacheConfig: {
-    enabled: true,
-    ttl: 10000, // Cache tokens for 10 seconds
-    maxSize: 500, // Store up to 500 unique tokens
-  },
+Returns an object you keep for the life of the process:
+
+|                                         |                                                                |
+| :-------------------------------------- | :------------------------------------------------------------- |
+| `publisher.header`                      | `["Better-Web-Publisher", "pub_...; v=1"]`, ready to spread    |
+| `publisher.headerName` / `.headerValue` | the same, separately                                           |
+| `publisher.tokenHeaderName`             | `"Better-Web-Token"`                                           |
+| `publisher.tokenHeaderNameLowercase`    | `"better-web-token"`, how Node and Fastify key request headers |
+| `publisher.verify(token, hostname?)`    | `Promise<VerificationResult>`                                  |
+| `publisher.cacheStats()`                | `{ size, maxSize, hits, misses, evictions }`                   |
+| `publisher.clearCache()`                | drops every cached verdict                                     |
+
+### `publisher.verify(token, hostname?)`
+
+Takes the raw header value - `string`, `string[]` (Node hands back an array for a repeated header),
+`null` or `undefined`. Never throws on bad input; a junk token is a result, not an exception.
+
+The hostname may be omitted when exactly one was configured. Pass `request.headers.host` when you
+serve several - a host outside your allowlist is rejected, never trusted.
+
+The result is a discriminated union, so TypeScript gives you the right fields in each branch:
+
+```ts
+const visitor = await publisher.verify(token, host)
+
+if (visitor.subscriber) {
+  visitor.plan // PLAN.FREEDOM
+  visitor.planName // "freedom"
+  visitor.expiresAt // Date
+} else {
+  visitor.reason // REJECTED.*
+}
+
+visitor.hostname // what it was verified against
+visitor.cached // whether this skipped the cryptography
+```
+
+### `REJECTED`
+
+Worth logging. Most of these are ordinary; two are not.
+
+| Reason                | Means                                            | Ordinary?                        |
+| :-------------------- | :----------------------------------------------- | :------------------------------- |
+| `missing`             | No token header. Most of your traffic.           | yes                              |
+| `malformed`           | Not a well-formed token.                         | yes                              |
+| `unsupported_version` | A newer token format. Upgrade this package.      | yes                              |
+| `expired`             | Genuine, but past its expiry.                    | yes                              |
+| `unknown_hostname`    | The host asked for is not in your allowlist.     | check your config                |
+| `wrong_hostname`      | A genuine token minted for **a different site**. | **somebody is replaying tokens** |
+| `forged`              | Not signed by Zero Ad Network.                   | **somebody is minting tokens**   |
+
+### Also exported
+
+`PLAN`, `PLAN_NAME`, `REJECTED`, `PUBLISHER_HEADER`, `TOKEN_HEADER`, `TOKEN_HEADER_LOWERCASE`,
+`AUTHORITY_PUBLIC_KEY`, `PROTOCOL_VERSION`, `TOKEN_BYTES`, `TOKEN_CHARACTERS`, `DEFAULT_CACHE_OPTIONS`,
+`canonicalHostname()`, `parsePublisherHeader()`, and the `VerificationResult`, `SubscriberResult`,
+`NonSubscriberResult`, `Plan`, `Rejected`, `CacheOptions`, `CacheStats`, `Publisher`,
+`PublisherOptions`, `PublisherHeader` types.
+
+This package **only verifies**. Nothing here can mint a token - that requires a private key that never
+leaves the platform.
+
+---
+
+## Caching
+
+A subscriber's token stays the same all day, so a returning visitor sends bytes you have already
+checked. Verifying once and remembering the answer turns 80 microseconds of elliptic curve maths into
+a 0.33 microsecond map lookup. It is on by default and there is rarely a reason to touch it.
+
+```ts
+createPublisher({
+  publisherId: "pub_...",
+  hostnames: "example.com",
+  cache: { ttl: 600_000, maxSize: 5000 }, // or `cache: false`
 })
 ```
 
-**Cache Behavior:**
+| Option    | Default  |                                   |
+| :-------- | :------- | :-------------------------------- |
+| `enabled` | `true`   |                                   |
+| `ttl`     | `600000` | milliseconds a verdict is trusted |
+| `maxSize` | `1000`   | entries, roughly 700 bytes each   |
 
-- Automatically respects token expiration times
-- Uses LFU+LRU eviction strategy
-- Thread-safe for concurrent requests
+Three things it does that are worth knowing about:
 
-For more control, you can configure caching globally:
+**Failures are cached too.** A forged token costs exactly as much to reject as a real one costs to
+accept, and whoever sends it is likely to send it again. This is safe because, for a fixed public key,
+a rejection can never later become an acceptance - the only direction a verdict moves is valid to
+expired, which each entry's own expiry already handles.
 
-```typescript
-import { configureCaching } from "@zeroad.network/token"
+**A success never outlives the token.** The stored expiry is the earlier of your TTL and the token's
+own `expiresAt`, so a generous TTL cannot extend anybody's subscription.
 
-// Apply to all Site instances
-configureCaching({
-  enabled: true,
-  ttl: 5000,
-  maxSize: 100,
-})
-```
+**Cheap rejections are not cached.** A malformed token is thrown out by a length check in about a
+microsecond. Caching those would save nothing and would hand anyone who can send a request an easy way
+to fill your memory with distinct keys.
 
-## Security
+Entries are evicted least-used-first, with the oldest breaking ties, and expired ones are swept as
+writes accumulate rather than on a timer - an idle process stays idle.
 
-### Token Verification
+---
 
-All tokens are cryptographically signed using ED25519 by Zero Ad Network:
+## How the token works
 
-- **Signature verification** happens locally on your server using Zero Ad Network's official public key
-- **Trusted authority** - Only tokens signed by Zero Ad Network are valid
-- **No external API calls** - verification is instant and offline
-- **Tamper-proof** - modified tokens fail verification automatically
-- **Time-limited** - expired tokens are automatically rejected
+You do not need this to integrate. You may want it before you trust it.
 
-The module uses a hardcoded public key from Zero Ad Network, ensuring only legitimate subscriber tokens are accepted.
-
-### Token Structure
-
-Each token contains:
-
-1. **Protocol version** - Currently v1
-2. **Expiration timestamp** - Unix timestamp
-3. **Feature flags** - Bitmask of enabled features
-4. **Client ID** (optional) - For developer tokens
-5. **Cryptographic signature** - ED25519 signature
-
-Example token:
+A token is 174 bytes, 232 base64url characters, and carries **two** Ed25519 signatures.
 
 ```
-X-Better-Web-Hello: Aav2IXRoh0oKBw==.2yZfC2/pM9DWfgX+von4IgWLmN9t67HJHLiee/gx4+pFIHHurwkC3PCHT1Kaz0yUhx3crUaxST+XLlRtJYacAQ==
+  offset  size  field
+       0     1  version
+       1     1  plan
+       2     4  expiresAt, u32 unix seconds, little-endian
+       6    32  ephemeralPublicKey
+      38    64  authoritySignature
+     102     8  nonce
+     110    64  hostnameSignature
 ```
 
-### Privacy
+**The platform signs a batch credential.** Once a day, the extension generates a batch of throwaway
+keypairs locally and sends the public halves to us. We check the subscription is live, sign each one
+together with the plan and an expiry truncated to midnight UTC, and send them back. We never see the
+private halves, and the shared midnight expiry puts every subscriber in one anonymity set.
 
-Tokens contain **no personally identifiable information**:
+**The extension binds one to your hostname.** Offline, with no network call, the first time it meets
+`example.com` it takes an unused keypair and signs your hostname with the private half. It reuses that
+bound token for every request to you until it expires.
 
-- ❌ No user IDs
-- ❌ No email addresses
-- ❌ No tracking data
-- ✅ Only: expiration date and feature flags
+**You verify both signatures.** The first proves the platform issued the credential for a live
+subscription. The second proves it was minted for _your_ host.
+
+The hostname is deliberately absent from the wire. Your server already knows what it serves and
+rebuilds the signed message from that, so there is nothing to parse or compare - a token bound
+elsewhere simply fails the signature.
+
+### What this stops
+
+The token you receive contains a **public** key and a signature over **your own** hostname. The secret
+that mints bindings never leaves the visitor's browser.
+
+- You cannot present a visitor's token at another site. You would need a signature over that site's
+  hostname, and you do not have the key.
+- Nobody can edit the plan or push out the expiry. Both are covered by the platform signature.
+- Nobody can mint a token. That needs a private key we hold.
+
+Two properties to be aware of rather than surprised by. A token is reused for a day, so it is a stable
+identifier _for your site alone_ for that long - inherent to any multi-use token, and no other site
+ever sees the same one. And unlinkability from the platform itself rests on us not retaining which
+account we signed which key for, which is a policy commitment, not a mathematical one.
+
+### Why hostnames are an allowlist
+
+`hostnames` is required, and `verify()` will not fall back to whatever arrived in the `Host` header,
+because tokens are bound to a hostname and `Host` is set by the client. Without the allowlist an
+attacker could bind a token to a domain they control, send it with `Host: that-domain.example`, and be
+admitted as a subscriber. Listing your hosts removes the possibility.
+
+Note that `www.example.com` and `example.com` are different hosts. If you serve both, list both.
+
+---
 
 ## Performance
 
-### Benchmarks
+Measured on Bun 1.3, Apple Silicon, single core:
 
-Typical performance on modern hardware (M1 MacBook Pro):
+|                               |                                                    |
+| :---------------------------- | :------------------------------------------------- |
+| Cold verification, end to end | 80us, about 12,400/s                               |
+| Cached verdict                | 0.33us, about 3,000,000/s                          |
+| Malformed token               | about 1us, rejected on length before it is decoded |
 
-| Operation          | Time   | Notes                        |
-| ------------------ | ------ | ---------------------------- |
-| Parse cached token | ~10μs  | Cache hit                    |
-| Parse new token    | ~150μs | Includes crypto verification |
-| Verify signature   | ~100μs | ED25519 verification         |
-| Build context      | ~8μs   | Feature flag processing      |
+`node:crypto`'s synchronous verify is used where available. It is faster than dispatching to the
+libuv threadpool (36.7us against 46.0us) and faster than WebCrypto (47.3us), and work that short does
+not benefit from leaving the main thread. WebCrypto is the fallback, so edge runtimes work too.
 
-### Optimization Tips
+---
 
-1. **Enable caching** - 80-95% performance improvement for repeated tokens
-2. **Use async operations** - Crypto runs in Node.js threadpool (non-blocking)
-3. **Cache at edge** - Consider caching at CDN/proxy level
-4. **Monitor cache hit rate** - Adjust TTL and size based on traffic patterns
+## Runtimes
 
-### High-Traffic Scenarios
+|                                        |      |               |
+| :------------------------------------- | :--- | :------------ |
+| Node.js                                | 16+  | ESM and CJS   |
+| Bun                                    | 1.1+ | ESM and CJS   |
+| Deno                                   | 2.0+ | ESM           |
+| Edge (Cloudflare Workers, Vercel Edge) | -    | via WebCrypto |
 
-For sites with >1000 req/sec:
-
-```typescript
-configureCaching({
-  enabled: true,
-  ttl: 30000, // 30 seconds
-  maxSize: 5000, // ~2.5MB memory
-})
-```
-
-The async crypto operations utilize Node.js libuv threadpool (4 threads by default), allowing ~8000 verifications/sec without blocking the event loop.
-
-## Framework Examples
-
-### Next.js (Pages Router)
-
-```typescript
-// middleware.ts
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { Site, FEATURE } from "@zeroad.network/token";
-
-// Create site instance once
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID!,
-  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS]
-});
-
-export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-
-  // Add Welcome Header to response
-  response.headers.set(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE);
-
-  return response;
-}
-
-// pages/article/[id].tsx
-import { GetServerSideProps } from "next";
-import { Site, FEATURE } from "@zeroad.network/token";
-
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID!,
-  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS]
-});
-
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  // Parse token in server-side code
-  const tokenContext = await site.parseClientToken(
-    req.headers[site.CLIENT_HEADER_NAME]
-  );
-
-  const article = await getArticle();
-
-  return {
-    props: {
-      article,
-      tokenContext
-    }
-  };
-};
-
-export default function Article({ article, tokenContext }) {
-  return (
-    <div>
-      {/* Conditionally render based on token context */}
-      {!tokenContext.HIDE_ADVERTISEMENTS && (
-        <div className="ad-banner">Ad content</div>
-      )}
-
-      <article>
-        <h1>{article.title}</h1>
-        {tokenContext.DISABLE_CONTENT_PAYWALL ? (
-          <div>{article.fullContent}</div>
-        ) : (
-          <div>{article.preview}</div>
-        )}
-      </article>
-    </div>
-  );
-}
-```
-
-### Fastify
-
-```typescript
-import Fastify from "fastify"
-import { Site, FEATURE } from "@zeroad.network/token"
-
-const fastify = Fastify()
-
-// Create site instance once
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID!,
-  features: [FEATURE.CLEAN_WEB],
-})
-
-fastify.addHook("onRequest", async (request, reply) => {
-  reply.header(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE)
-
-  request.tokenContext = await site.parseClientToken(request.headers[site.CLIENT_HEADER_NAME])
-})
-
-fastify.get("/", async (request, reply) => {
-  return reply.view("index", {
-    tokenContext: request.tokenContext,
-  })
-})
-
-await fastify.listen({ port: 3000 })
-```
-
-### Hono
-
-```typescript
-import { Hono } from "hono"
-import { Site, FEATURE } from "@zeroad.network/token"
-
-const app = new Hono()
-
-// Create site instance once
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID!,
-  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
-})
-
-app.use("*", async (c, next) => {
-  c.header(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE)
-
-  c.set("tokenContext", await site.parseClientToken(c.req.header(site.CLIENT_HEADER_NAME)))
-
-  await next()
-})
-
-app.get("/", (c) => {
-  return c.html(
-    renderTemplate({
-      tokenContext: c.get("tokenContext"),
-    })
-  )
-})
-
-export default app
-```
-
-## Complete Usage Example
-
-```typescript
-import express from "express"
-import { Site, FEATURE } from "@zeroad.network/token"
-
-const app = express()
-
-// Create your site instance once at startup
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID!,
-  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
-  cacheConfig: {
-    enabled: true,
-    ttl: 10000,
-    maxSize: 500,
-  },
-})
-
-// Global middleware
-app.use(async (req, res, next) => {
-  res.set(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE)
-  req.tokenContext = await site.parseClientToken(req.get(site.CLIENT_HEADER_NAME))
-  next()
-})
-
-// Homepage with ads
-app.get("/", async (req, res) => {
-  res.render("index", {
-    tokenContext: req.tokenContext,
-  })
-})
-
-// Article page with paywall
-app.get("/article/:id", async (req, res) => {
-  const article = await db.articles.findById(req.params.id)
-
-  res.render("article", {
-    article,
-    tokenContext: req.tokenContext,
-  })
-})
-
-// Premium API endpoint
-app.get("/api/premium-data", async (req, res) => {
-  if (!req.tokenContext.ENABLE_SUBSCRIPTION_ACCESS) {
-    return res.status(403).json({
-      error: "Premium subscription required",
-    })
-  }
-
-  const data = await getPremiumData()
-  res.json(data)
-})
-
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000")
-})
-```
-
-**Template Example:**
-
-```ejs
-<!-- article.ejs -->
-<!DOCTYPE html>
-<html>
-<head>
-  <title><%= article.title %></title>
-</head>
-<body>
-  <!-- Ads only for non-subscribers -->
-  <% if (!tokenContext.HIDE_ADVERTISEMENTS) { %>
-    <div class="ad-banner">
-      <!-- Google AdSense or other ad code -->
-    </div>
-  <% } %>
-
-  <!-- Cookie consent only for non-subscribers -->
-  <% if (!tokenContext.HIDE_COOKIE_CONSENT_SCREEN) { %>
-    <div class="cookie-consent">
-      <p>We use cookies...</p>
-    </div>
-  <% } %>
-
-  <article>
-    <h1><%= article.title %></h1>
-
-    <!-- Full content for subscribers, preview for others -->
-    <% if (tokenContext.DISABLE_CONTENT_PAYWALL) { %>
-      <div class="full-content">
-        <%- article.fullContent %>
-      </div>
-    <% } else { %>
-      <div class="preview">
-        <%- article.preview %>
-        <div class="paywall">
-          <p>Subscribe to read the full article</p>
-          <a href="/subscribe">Subscribe Now</a>
-        </div>
-      </div>
-    <% } %>
-  </article>
-
-  <!-- Marketing popup only for non-subscribers -->
-  <% if (!tokenContext.HIDE_MARKETING_DIALOGS) { %>
-    <div class="newsletter-popup">
-      <p>Subscribe to our newsletter!</p>
-    </div>
-  <% } %>
-
-  <!-- Analytics tracking (only functional cookies for subscribers) -->
-  <% if (!tokenContext.DISABLE_NON_FUNCTIONAL_TRACKING) { %>
-    <script>
-      // Google Analytics or other tracking code
-    </script>
-  <% } %>
-</body>
-</html>
-```
-
-## Implementation Requirements
-
-When implementing Zero Ad Network features, you **must** fulfill these requirements to remain in good standing:
-
-### CLEAN_WEB Requirements
-
-- ✅ Disable **all** advertisements on the page
-- ✅ Disable **all** cookie consent screens (headers, footers, dialogs)
-- ✅ Fully opt out users from **non-functional** trackers
-- ✅ Disable **all** marketing dialogs or popups (newsletters, promotions)
-
-### ONE_PASS Requirements
-
-- ✅ Provide free access to content behind paywalls
-- ✅ Provide free access to your base subscription plan (if applicable)
-
-**⚠️ Failure to comply will result in removal from the Zero Ad Network platform.**
+---
 
 ## Troubleshooting
 
-### Tokens Not Working
+**Every visitor comes back `missing`.** Expected - only subscribers send a token. Confirm the pipe
+works by checking `Better-Web-Publisher` appears on your responses (`curl -sI https://your-site`).
 
-```typescript
-import { Site, setLogLevel } from "@zeroad.network/token"
+**`unknown_hostname`.** The host being verified is not in `hostnames`. Log `visitor.hostname` to see
+what actually arrived; a reverse proxy may be passing something you did not expect.
 
-// Enable debug logging
-setLogLevel("debug")
+**`wrong_hostname` from real visitors.** Usually `www` versus apex. List both.
 
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID!,
-  features: [FEATURE.CLEAN_WEB],
-})
+**`forged` for everybody.** A `publicKey` override left over from staging.
 
-// In your route handler
-app.use(async (req, res, next) => {
-  // Check if token header is being received
-  const headerValue = req.get(site.CLIENT_HEADER_NAME)
-  console.log("Header value:", headerValue)
+**It got slower under load.** Check `publisher.cacheStats()`. A high `evictions` count against `size`
+at `maxSize` means the working set outgrew the cache - raise `maxSize`.
 
-  // Parse and verify
-  const tokenContext = await site.parseClientToken(headerValue)
-  console.log("Token context:", tokenContext)
-
-  req.tokenContext = tokenContext
-  next()
-})
-```
-
-### Cache Issues
-
-```typescript
-import { clearHeaderCache, getCacheConfig } from "@zeroad.network/token"
-
-// Check current config
-console.log(getCacheConfig())
-
-// Clear cache if needed
-clearHeaderCache()
-
-// Disable caching for debugging
-configureCaching({ enabled: false })
-```
-
-### Common Issues
-
-1. **All flags are false** - Token is expired, invalid, or missing
-2. **Performance slow** - Enable caching or increase cache size
-3. **Token rejected** - Verify Client ID matches registered site
-4. **Headers not sent** - Ensure middleware runs before routes
-
-## API Reference
-
-### `Site(options)`
-
-Creates a site instance with helper methods. **This is the recommended way to use the module.**
-
-```typescript
-const site = Site({
-  clientId: "YOUR_CLIENT_ID",
-  features: [FEATURE.CLEAN_WEB],
-  cacheConfig: {
-    // optional
-    enabled: true,
-    ttl: 5000,
-    maxSize: 100,
-  },
-})
-
-// Returns an object with:
-site.parseClientToken(headerValue) // Parse and verify tokens
-site.CLIENT_HEADER_NAME // "x-better-web-hello"
-site.SERVER_HEADER_NAME // "X-Better-Web-Welcome"
-site.SERVER_HEADER_VALUE // Your site's welcome header value
-```
-
-**Options:**
-
-- `clientId` (string, required) - Your site's Client ID from Zero Ad Network
-- `features` (FEATURE[], required) - Array of enabled features
-- `cacheConfig` (CacheConfig, optional) - Cache configuration
-
-### `configureCaching(config)`
-
-Configure global cache settings (applies to all Site instances).
-
-```typescript
-import { configureCaching } from "@zeroad.network/token"
-
-configureCaching({
-  enabled: boolean, // Enable/disable caching
-  ttl: number, // Time-to-live in milliseconds
-  maxSize: number, // Maximum cache entries
-})
-```
-
-### `clearHeaderCache()`
-
-Manually clear the token cache.
-
-```typescript
-import { clearHeaderCache } from "@zeroad.network/token"
-
-clearHeaderCache()
-```
-
-### `setLogLevel(level)`
-
-Set logging verbosity for debugging.
-
-```typescript
-import { setLogLevel } from "@zeroad.network/token"
-
-setLogLevel("debug") // "error" | "warn" | "info" | "debug"
-```
-
-### `setLogTransport(fn)`
-
-Customize where logs are sent (useful for production monitoring).
-
-```typescript
-import { setLogTransport } from "@zeroad.network/token"
-
-// Send logs to your monitoring service
-setLogTransport((level, ...args) => {
-  if (level === "error") {
-    yourMonitoringService.captureError(args)
-  } else {
-    yourLogger.log(level, ...args)
-  }
-})
-
-// Example: Integrate with Winston
-import winston from "winston"
-
-const logger = winston.createLogger({
-  transports: [new winston.transports.File({ filename: "zeroad.log" })],
-})
-
-setLogTransport((level, ...args) => {
-  logger.log(level, args.join(" "))
-})
-
-// Example: Disable all logging in production
-if (process.env.NODE_ENV === "production") {
-  setLogTransport(() => {}) // No-op function
-}
-```
-
-## Resources
-
-- 📖 [Official Documentation](https://docs.zeroad.network)
-- 🌐 [Zero Ad Network Platform](https://zeroad.network)
-- 💻 [Example Implementations](https://github.com/laurynas-karvelis/zeroad-token-typescript/tree/main/examples/)
-- 📝 [Blog](https://docs.zeroad.network/blog)
-
-## Contributing
-
-This module is open-source. Contributions are welcome! Please ensure:
-
-- All tests pass
-- Code follows existing style
-- TypeScript types are complete
-- Documentation is updated
+---
 
 ## License
 
-Apache License 2.0 - see LICENSE file for details
-
-## About Zero Ad Network
-
-Zero Ad Network is building a fairer internet where:
-
-- Users enjoy cleaner, faster browsing
-- Publishers earn sustainable revenue
-- Privacy is respected by default
-
-Join thousands of publishers creating a better web experience.
-
-[Get Started →](https://zeroad.network/login)
+Apache-2.0

@@ -1,43 +1,43 @@
 /**
- * Official Zero Ad Network public key.
- * Used to verify that `X-Better-Web-Hello` header values are authentic
- * and have not been tampered with.
+ * Official Zero Ad Network authority public key, in base64 SPKI DER (Ed25519).
+ *
+ * Every token a browser extension sends is anchored to this key. Publishers verify against a local
+ * copy of it and never call the platform during request handling - verification is 100% offline.
  */
-export const ZEROAD_NETWORK_PUBLIC_KEY: string = "MCowBQYDK2VwAyEAignXRaTQtxEDl4ThULucKNQKEEO2Lo5bEO8qKwjSDVs="
+export const AUTHORITY_PUBLIC_KEY: string = "MCowBQYDK2VwAyEAignXRaTQtxEDl4ThULucKNQKEEO2Lo5bEO8qKwjSDVs="
 
 /**
- * IMPORTANT: Requirements listed for each feature class MUST be fulfilled fully.
- * Failure to comply will result in the site getting banned from Zero Ad Network platform.
+ * Response header a publisher sets on every page, announcing that this site participates in the
+ * network. The value is the publisher ID, which is how the platform credits the site for the visit.
  */
+export const PUBLISHER_HEADER = "Better-Web-Publisher"
 
-export enum FEATURE {
-  /**
-   * Feature requirements:
-   *  - Disable all advertisements on the page;
-   *  - Disable all Cookie Consent screens (headers, footers, or dialogs);
-   *  - Fully opt out the user of non-functional trackers;
-   *  - Disable all marketing dialogs or popups (newsletters, promotions, etc.).
-   */
-  CLEAN_WEB = 1 << 0,
+/**
+ * Request header the browser extension attaches, carrying the visitor's subscription token.
+ * Header names are case-insensitive on the wire; most frameworks expose them lowercased.
+ */
+export const TOKEN_HEADER = "Better-Web-Token"
 
-  /**
-   * Feature requirements:
-   *  - Provide Free access to content behind a paywall (news, articles, etc.);
-   *  - Provide Free access to your base subscription plan (if subscription model is present).
-   */
-  ONE_PASS = 1 << 1,
-}
+/** Lowercased `TOKEN_HEADER`, which is the form Node, Bun, Deno and Hono hand you on `req.headers`. */
+export const TOKEN_HEADER_LOWERCASE = "better-web-token"
 
-export enum SERVER_HEADER {
-  WELCOME = "X-Better-Web-Welcome",
-}
+/** Wire format version. Bumped only for a breaking change to the token byte layout. */
+export const PROTOCOL_VERSION = 1
 
-export enum CLIENT_HEADER {
-  HELLO = "X-Better-Web-Hello",
-}
+/**
+ * Subscription plans. Only `FREEDOM` exists today - it entitles the visitor to an ad-free, tracker-free,
+ * consent-dialog-free page and to any content the site keeps behind a paywall.
+ *
+ * The plan travels as a single byte, so 254 more can be added without a format change. Treat an
+ * unrecognised plan as "not entitled" rather than as an error.
+ */
+export const PLAN = {
+  FREEDOM: 1,
+} as const
 
-export enum PROTOCOL_VERSION {
-  V_1 = 1,
-}
+export type Plan = (typeof PLAN)[keyof typeof PLAN]
 
-export const CURRENT_PROTOCOL_VERSION = PROTOCOL_VERSION.V_1
+/** Human-readable plan names, for logs and dashboards. */
+export const PLAN_NAME: Readonly<Record<Plan, string>> = Object.freeze({
+  [PLAN.FREEDOM]: "Freedom",
+})

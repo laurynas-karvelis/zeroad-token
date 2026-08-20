@@ -1,101 +1,64 @@
 /* eslint-disable no-console */
 import path from "node:path"
-import { FEATURE, Site, type TokenContext } from "@zeroad.network/token"
+import { createPublisher, type VerificationResult } from "@zeroad.network/token"
 import { Eta } from "eta"
 import { Hono } from "hono"
 
-// Extend Hono context type
 type Variables = {
-  tokenContext: TokenContext
+  visitor: VerificationResult
 }
 
 const app = new Hono<{ Variables: Variables }>()
-
-// Initialize Eta template engine
 const eta = new Eta({ views: path.join(import.meta.dirname, "../templates") })
 
-// Initialize Zero Ad Network site instance once at startup
-const site = Site({
-  clientId: process.env.ZERO_AD_CLIENT_ID || "DEMO-Z2CclA8oXIT1e0Qmq",
-  features: [FEATURE.CLEAN_WEB, FEATURE.ONE_PASS],
-  cacheConfig: {
-    enabled: true,
-    ttl: 10000,
-    maxSize: 500,
-  },
+// Create once at startup, reuse for the life of the process
+const publisher = createPublisher({
+  publisherId: process.env.ZERO_AD_PUBLISHER_ID || "pub_DEMO7Fq2xR9nKd",
+  hostnames: process.env.ZERO_AD_HOSTNAMES?.split(",") || ["localhost", "example.com"],
+  cache: { ttl: 600_000, maxSize: 5000 },
 })
 
-// Middleware: Set Welcome Header and parse user tokens
 app.use("*", async (c, next) => {
-  // Set Welcome Header
-  c.header(site.SERVER_HEADER_NAME, site.SERVER_HEADER_VALUE)
+  // Announce that this site takes part, and who to credit for the visit
+  c.header(...publisher.header)
 
-  // Parse token from request header
-  const tokenContext = await site.parseClientToken(c.req.header(site.CLIENT_HEADER_NAME))
-
-  c.set("tokenContext", tokenContext)
+  // Verify the visitor's token against the host they asked for
+  c.set("visitor", await publisher.verify(c.req.header(publisher.tokenHeaderName), c.req.header("host")))
 
   await next()
 })
 
-// Homepage route
 app.get("/", (c) => {
-  const tokenContext = c.get("tokenContext")
+  const visitor = c.get("visitor")
 
-  const html = eta.render("homepage", {
-    tokenContext,
-  })
-
-  return c.html(html as string)
+  return c.html(
+    eta.render("homepage", {
+      subscriber: visitor.subscriber,
+      plan: visitor.subscriber ? visitor.planName : null,
+      reason: visitor.subscriber ? null : visitor.reason,
+    }) as string
+  )
 })
 
-// Premium API endpoint
 app.get("/api/premium-data", (c) => {
-  const tokenContext = c.get("tokenContext")
+  const visitor = c.get("visitor")
 
-  if (!tokenContext.ENABLE_SUBSCRIPTION_ACCESS) {
-    return c.json(
-      {
-        error: "Premium subscription required",
-        message: "Subscribe to Zero Ad Network to access this endpoint",
-      },
-      403
-    )
+  if (!visitor.subscriber) {
+    // `reason` is for your logs and for debugging an integration - do not leak it to visitors in
+    // production, it tells an attacker exactly which check they failed
+    return c.json({ error: "Subscription required", reason: visitor.reason }, 403)
   }
 
   return c.json({
-    data: "Premium content for Zero Ad Network subscribers",
-    timestamp: new Date().toISOString(),
+    data: "Premium content, unlocked for a Zero Ad Network subscriber",
   })
 })
 
+app.get("/internal/token-cache", (c) => c.json(publisher.cacheStats()))
+
 const PORT = Number(process.env.PORT) || 8080
 
-console.log(`
-╔════════════════════════════════════════════════════════════╗
-║  Zero Ad Network - Hono Example (TypeScript)               ║
-╚════════════════════════════════════════════════════════════╝
+console.log(`Zero Ad Network Hono example on http://localhost:${PORT}`)
+console.log(`Announcing: ${publisher.headerName}: ${publisher.headerValue}`)
 
-Server running at: http://localhost:${PORT}
-
-Routes:
-  • GET /                  - Homepage
-  • GET /api/premium-data  - Premium API endpoint
-
-Features:
-  ✓ Ultra-lightweight Hono framework
-  ✓ TypeScript type safety
-  ✓ Eta template rendering
-  ✓ Async token parsing
-  ✓ Token caching enabled
-
-Cache Config:
-  • Enabled: true
-  • TTL: 10000ms
-  • Max Size: 500 entries
-`)
-
-export default {
-  port: PORT,
-  fetch: app.fetch,
-}
+export default { port: PORT, fetch: app.fetch }
