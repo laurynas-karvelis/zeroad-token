@@ -1,0 +1,78 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": { "ignoreUnknown": false },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "noAssignInExpressions": "off",
+        "useIterableCallbackReturn": "off",
+        "noImplicitAnyLet": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "trailingCommas": "es5",
+      "semicolons": "asNeeded",
+      "attributePosition": "multiline"
+    }
+  },
+  "json": {
+    "parser": {
+      "allowTrailingCommas": true
+    },
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  },
+  "overrides": [
+    { "includes": ["*.php"], "formatter": { "indentStyle": "space", "indentWidth": 4 } },
+    { "includes": ["apps/frontend/static/js/**"], "linter": { "enabled": false }, "formatter": { "enabled": false } },
+    {
+      "includes": ["tools/database-migrations/migrations/**"],
+      "linter": { "enabled": false },
+      "formatter": { "enabled": false }
+    },
+    {
+      "includes": ["apps/frontend/public/js/**"],
+      "linter": { "enabled": false },
+      "formatter": { "enabled": false }
+    },
+    {
+      "includes": ["**/*.cjs"],
+      "linter": { "rules": { "style": { "noCommonJs": "off" } } }
+    },
+    {
+      "includes": ["**/*.test.{ts,js}", "**/*.spec.{ts,js}"],
+      "linter": { "rules": { "suspicious": { "noExplicitAny": "error" } } }
+    },
+    {
+      "includes": ["sdk/zeroad-wordpress/**"],
+      "linter": { "rules": { "complexity": { "noImportantStyles": "off" } } }
+    }
+  ],
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [[":BUN:", ":NODE:"], ":PACKAGE:", ":ALIAS:", ":PATH:"]
+          }
+        }
+      }
+    }
+  }
+}
