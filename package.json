@@ -9,10 +9,6 @@
     "email": "hello@zeroad.network",
     "url": "http://zeroad.network"
   },
-  "files": [
-    "./dist/**/*",
-    "SKILLS.md"
-  ],
   "keywords": [
     "zero ad network",
     "zeroad",
@@ -49,28 +45,18 @@
     "bun": ">=1.1.0",
     "deno": ">=2.0.0"
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
-    }
-  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/*.js",
+    "dist/*.d.ts",
+    "SKILLS.md"
+  ],
   "scripts": {
     "prettier": "prettier . --write",
-    "build:esm": "bun build ./src/index.ts --outdir ./dist --target=node --format=esm && mv ./dist/index.js ./dist/index.mjs",
-    "build:cjs": "bun build ./src/index.ts --outdir ./dist --target=node --format=cjs && mv ./dist/index.js ./dist/index.cjs",
-    "build:types": "tsc --emitDeclarationOnly && cp ./dist/index.d.ts ./dist/index.d.mts && mv ./dist/index.d.ts ./dist/index.d.cts",
-    "build:declaration": "tsc --emitDeclarationOnly --project tsconfig.json",
-    "build": "rm -rf ./dist && bun run build:esm && bun run build:cjs && bun run build:types",
+    "build:esm": "bun build ./src/index.ts --outdir ./dist --target=node",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build": "rm -rf ./dist && bun run build:esm && bun run build:types",
     "test": "bun test ./src",
     "test:smoke": "bun run build && node smoke-tests/import.mjs && node smoke-tests/require.cjs",
     "lint:fix": "biome check . --write",

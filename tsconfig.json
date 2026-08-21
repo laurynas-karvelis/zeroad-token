@@ -14,5 +14,5 @@
     "lib": ["ESNext", "DOM"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist", "examples", "smoke-tests"]
+  "exclude": ["dist", "src/**/__tests__", "examples", "smoke-tests"]
 }
