@@ -1,5 +1,5 @@
 const assert = require("node:assert")
-const { createPublisher, PLAN, PUBLISHER_HEADER, REJECTED, TOKEN_HEADER } = require("../dist/index.cjs")
+const { createPublisher, PLAN, PUBLISHER_HEADER, REJECTED, TOKEN_HEADER } = require("../dist/index.js")
 
 ;(async () => {
   const publisher = createPublisher({

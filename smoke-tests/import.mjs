@@ -1,5 +1,5 @@
 import assert from "node:assert"
-import { createPublisher, PLAN, PUBLISHER_HEADER, REJECTED, TOKEN_HEADER } from "../dist/index.mjs"
+import { createPublisher, PLAN, PUBLISHER_HEADER, REJECTED, TOKEN_HEADER } from "../dist/index.js"
 
 const publisher = createPublisher({
   publisherId: "pub_smoke",
