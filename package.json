@@ -76,7 +76,7 @@
     "@types/node": "^26.2.0",
     "pkgroll": "^2.27.1",
     "prettier": "^3.9.6",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   },
   "description": "Offline verification of Zero Ad Network subscriber tokens for publisher backends. Zero dependencies."
 }
