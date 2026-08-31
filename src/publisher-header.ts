@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION } from "./constants"
+import { PROTOCOL_VERSION, PUBLISHER_ID_SCHEME } from "./constants"
 
 /**
  * The `Better-Web-Publisher` response header.
@@ -6,7 +6,7 @@ import { PROTOCOL_VERSION } from "./constants"
  * The value is the publisher ID and nothing else, plus a version parameter in the usual HTTP style:
  *
  * ```
- *   Better-Web-Publisher: pub_7Fq2xR9nKd; v=1
+ *   Better-Web-Publisher: ZERO_AD:PUB_ID:7Fq2xR9nKd...; v=1
  * ```
  *
  * The publisher ID is what credits the visit for revenue sharing. The version costs six characters and
@@ -16,12 +16,16 @@ import { PROTOCOL_VERSION } from "./constants"
  * `add_header` still works.
  */
 
-/** Publisher IDs are opaque, but they end up in a response header, so control characters are refused. */
-const VALID_PUBLISHER_ID = /^[\x21-\x7e]{1,128}$/
+/**
+ * A publisher ID is the scheme prefix followed by alphanumerics, kept within 128 chars so it survives
+ * any header/query transport. The scheme is required, which is what lets a content scan reject stray
+ * page text that happens to look id-shaped.
+ */
+const VALID_PUBLISHER_ID = new RegExp(`^${PUBLISHER_ID_SCHEME}[A-Za-z0-9]{1,113}$`)
 
 export function encodePublisherHeader(publisherId: string, version: number = PROTOCOL_VERSION): string {
   if (!VALID_PUBLISHER_ID.test(publisherId)) {
-    throw new Error("`publisherId` must be 1-128 printable ASCII characters with no spaces")
+    throw new Error(`\`publisherId\` must be "${PUBLISHER_ID_SCHEME}" followed by 1-113 alphanumerics`)
   }
 
   return `${publisherId}; v=${version}`
