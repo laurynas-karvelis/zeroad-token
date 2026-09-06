@@ -13,11 +13,12 @@ export const AUTHORITY_PUBLIC_KEY: string = "MCowBQYDK2VwAyEAignXRaTQtxEDl4ThULu
 export const PUBLISHER_HEADER = "Better-Web-Publisher"
 
 /**
- * Every publisher ID is namespaced with this scheme, e.g. `ZERO_AD:PUB_ID:7Fq2xR9nKd...`. The prefix
- * makes the id self-describing and lets a content-scanning extension tell a real id from arbitrary
- * page text, so a stray string in a comment can't be mistaken for a publisher id.
+ * Every publisher ID carries this prefix, e.g. `zapub_7Fq2xR9nKd...`. The prefix makes the id
+ * self-describing and lets a content-scanning extension tell a real id from arbitrary page text, so a
+ * stray string in a comment can't be mistaken for a publisher id. The same value is used verbatim
+ * everywhere the id appears - response header, meta tag and page body alike.
  */
-export const PUBLISHER_ID_SCHEME = "ZERO_AD:PUB_ID:"
+export const PUBLISHER_ID_SCHEME = "zapub_"
 
 /**
  * Request header the browser extension attaches, carrying the visitor's subscription token.

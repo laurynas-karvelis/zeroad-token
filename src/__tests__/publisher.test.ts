@@ -13,7 +13,7 @@ import {
 } from "./__fixtures__/authority"
 
 const HOSTNAME = "example.com"
-const PUBLISHER_ID = "pub_7Fq2xR9nKd"
+const PUBLISHER_ID = "zapub_7Fq2xR9nKdW3mB6tYp1sVzAe"
 
 let authority: Authority
 let publisher: Publisher
@@ -35,8 +35,8 @@ beforeEach(() => {
 describe("createPublisher", () => {
   test("exposes the response header ready to spread into setHeader", () => {
     expect(publisher.headerName).toBe(PUBLISHER_HEADER)
-    expect(publisher.headerValue).toBe(`${PUBLISHER_ID}; v=1`)
-    expect(publisher.header).toEqual([PUBLISHER_HEADER, `${PUBLISHER_ID}; v=1`])
+    expect(publisher.headerValue).toBe(PUBLISHER_ID)
+    expect(publisher.header).toEqual([PUBLISHER_HEADER, PUBLISHER_ID])
   })
 
   test("exposes the request header name in both casings", () => {
@@ -53,9 +53,9 @@ describe("createPublisher", () => {
   })
 
   test("rejects a publisher id that could inject a header", () => {
-    expect(() => build({ publisherId: "pub_abc\r\nX-Evil: 1" })).toThrow(/printable ASCII/)
-    expect(() => build({ publisherId: "" })).toThrow(/printable ASCII/)
-    expect(() => build({ publisherId: "has space" })).toThrow(/printable ASCII/)
+    expect(() => build({ publisherId: "zapub_abc\r\nX-Evil: 1" })).toThrow(/zapub_/)
+    expect(() => build({ publisherId: "" })).toThrow(/zapub_/)
+    expect(() => build({ publisherId: "has space" })).toThrow(/zapub_/)
   })
 
   test("rejects an empty hostname list", () => {

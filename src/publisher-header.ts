@@ -1,61 +1,50 @@
-import { PROTOCOL_VERSION, PUBLISHER_ID_SCHEME } from "./constants"
+import { PUBLISHER_ID_SCHEME } from "./constants"
 
 /**
  * The `Better-Web-Publisher` response header.
  *
- * The value is the publisher ID and nothing else, plus a version parameter in the usual HTTP style:
+ * The value is the publisher ID and nothing else:
  *
  * ```
- *   Better-Web-Publisher: ZERO_AD:PUB_ID:7Fq2xR9nKd...; v=1
+ *   Better-Web-Publisher: zapub_7Fq2xR9nKd...
  * ```
  *
- * The publisher ID is what credits the visit for revenue sharing. The version costs six characters and
- * buys the ability to ship a second token format later without every extension having to probe for
- * support - a decoder that predates a version simply ignores the sites announcing it. Bare values with
- * no parameter are accepted and read as version 1, so a publisher who hardcodes just the ID in an nginx
- * `add_header` still works.
+ * The same string is what goes in a `<meta name="Better-Web-Publisher">` tag and what a publisher
+ * prints in page content on a platform they don't fully control - one id, one representation, so a
+ * value copied from any of those places verifies against the others. The publisher ID is what credits
+ * the visit for revenue sharing.
  */
+
+/** The random part of a publisher id. Must match `PUBLISHER_ID_RANDOM_LENGTH` on the platform. */
+const PUBLISHER_ID_RANDOM_LENGTH = 24
 
 /**
- * A publisher ID is the scheme prefix followed by alphanumerics, kept within 128 chars so it survives
- * any header/query transport. The scheme is required, which is what lets a content scan reject stray
- * page text that happens to look id-shaped.
+ * A publisher ID is the prefix followed by exactly 24 alphanumerics, e.g.
+ * `zapub_7Fq2xR9nKdW3mB6tYp1sVzAe`. The prefix is required, which is what lets a content scan reject
+ * stray page text that happens to look id-shaped. Case-sensitive: the id is used verbatim wherever it
+ * appears, so a re-cased copy is not the same id.
  */
-const VALID_PUBLISHER_ID = new RegExp(`^${PUBLISHER_ID_SCHEME}[A-Za-z0-9]{1,113}$`)
+const VALID_PUBLISHER_ID = new RegExp(`^${PUBLISHER_ID_SCHEME}[A-Za-z0-9]{${PUBLISHER_ID_RANDOM_LENGTH}}$`)
 
-export function encodePublisherHeader(publisherId: string, version: number = PROTOCOL_VERSION): string {
+/** The header value for a publisher id: the id itself, once validated. Throws if it is malformed. */
+export function encodePublisherHeader(publisherId: string): string {
   if (!VALID_PUBLISHER_ID.test(publisherId)) {
-    throw new Error(`\`publisherId\` must be "${PUBLISHER_ID_SCHEME}" followed by 1-113 alphanumerics`)
+    throw new Error(
+      `\`publisherId\` must be "${PUBLISHER_ID_SCHEME}" followed by ${PUBLISHER_ID_RANDOM_LENGTH} alphanumerics`
+    )
   }
 
-  return `${publisherId}; v=${version}`
+  return publisherId
 }
 
-export type PublisherHeader = {
-  publisherId: string
-  version: number
-}
-
-/** Reads a `Better-Web-Publisher` value. Returns `undefined` if it is absent or unusable. */
-export function parsePublisherHeader(headerValue: string | null | undefined): PublisherHeader | undefined {
+/**
+ * Reads a `Better-Web-Publisher` value and returns the publisher id, or `undefined` if it is absent or
+ * unusable. Surrounding whitespace and any trailing `;`-separated parameters (which the format no
+ * longer uses) are tolerated, so a header still carrying a legacy parameter continues to resolve.
+ */
+export function parsePublisherHeader(headerValue: string | null | undefined): string | undefined {
   if (!headerValue) return undefined
 
-  const [rawId, ...parameters] = headerValue.split(";")
-  const publisherId = rawId.trim()
-
-  if (!VALID_PUBLISHER_ID.test(publisherId)) return undefined
-
-  let version = PROTOCOL_VERSION
-
-  for (const parameter of parameters) {
-    const [name, value] = parameter.split("=", 2)
-    if (name?.trim().toLowerCase() !== "v") continue
-
-    const parsed = Number(value?.trim())
-    if (!Number.isSafeInteger(parsed) || parsed < 1) return undefined
-
-    version = parsed
-  }
-
-  return { publisherId, version }
+  const publisherId = headerValue.split(";")[0].trim()
+  return VALID_PUBLISHER_ID.test(publisherId) ? publisherId : undefined
 }

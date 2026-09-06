@@ -70,7 +70,7 @@ function resolveCacheOptions(cache: PublisherOptions["cache"]): Partial<CacheOpt
  * Everything a publisher needs, built once at startup and reused for the life of the process.
  *
  * ```ts
- * const publisher = createPublisher({ publisherId: "pub_...", hostnames: "example.com" })
+ * const publisher = createPublisher({ publisherId: "zapub_...", hostnames: "example.com" })
  *
  * response.setHeader(...publisher.header)
  * const visitor = await publisher.verify(request.headers[publisher.tokenHeaderNameLowercase])

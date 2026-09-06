@@ -15,7 +15,7 @@ const eta = new Eta({ views: path.join(import.meta.dirname, "../templates") })
 
 // Create once at startup, reuse for the life of the process
 const publisher = createPublisher({
-  publisherId: process.env.ZERO_AD_PUBLISHER_ID || "pub_DEMO7Fq2xR9nKd",
+  publisherId: process.env.ZERO_AD_PUBLISHER_ID || "zapub_DEMOxR9nKd3wV8mB4tL6yH1c",
   hostnames: process.env.ZERO_AD_HOSTNAMES?.split(",") || ["localhost", "example.com"],
 })
 

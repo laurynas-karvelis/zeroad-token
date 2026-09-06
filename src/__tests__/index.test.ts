@@ -12,6 +12,7 @@ const EXPECTED_EXPORTS = [
   "PLAN_NAME",
   "PROTOCOL_VERSION",
   "PUBLISHER_HEADER",
+  "PUBLISHER_ID_SCHEME",
   "REJECTED",
   "TOKEN_BYTES",
   "TOKEN_CHARACTERS",
@@ -45,7 +46,7 @@ describe("public API", () => {
     expect(publicApi.AUTHORITY_PUBLIC_KEY).toMatch(/^[A-Za-z0-9+/]+=*$/)
     expect(() =>
       publicApi.createPublisher({
-        publisherId: "pub_x",
+        publisherId: "zapub_7Fq2xR9nKdW3mB6tYp1sVzAe",
         hostnames: "example.com",
       })
     ).not.toThrow()

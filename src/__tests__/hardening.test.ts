@@ -1,5 +1,5 @@
-import { generateKeyPairSync, randomBytes, sign } from "node:crypto"
 import { afterEach, describe, expect, test } from "bun:test"
+import { generateKeyPairSync, randomBytes, sign } from "node:crypto"
 import { nodeCryptoVerifier, useVerifier, verifierFromNodeCrypto, verifyEd25519, webCryptoVerifier } from "../ed25519"
 import { createPublisher, type Publisher } from "../publisher"
 import { REJECTED } from "../rejection"
@@ -17,7 +17,7 @@ const HOSTNAME = "example.com"
 
 function build(authority: Authority, overrides: Partial<Parameters<typeof createPublisher>[0]> = {}): Publisher {
   return createPublisher({
-    publisherId: "pub_hardening",
+    publisherId: "zapub_7Fq2xR9nKdW3mB6tYp1sVzAe",
     hostnames: HOSTNAME,
     publicKey: authority.publicKey,
     ...overrides,
@@ -262,7 +262,7 @@ describe("hostnames that look alike", () => {
   test("a unicode hostname and its punycode form are different hosts", async () => {
     const authority = createAuthority()
     const publisher = createPublisher({
-      publisherId: "pub_idn",
+      publisherId: "zapub_7Fq2xR9nKdW3mB6tYp1sVzAe",
       hostnames: ["xn--mnchen-3ya.de", "ünchen.de"],
       publicKey: authority.publicKey,
     })
@@ -278,7 +278,7 @@ describe("hostnames that look alike", () => {
   test("a subdomain cannot spend the apex domain's token", async () => {
     const authority = createAuthority()
     const publisher = createPublisher({
-      publisherId: "pub_sub",
+      publisherId: "zapub_7Fq2xR9nKdW3mB6tYp1sVzAe",
       hostnames: ["example.com", "shop.example.com"],
       publicKey: authority.publicKey,
     })
@@ -400,8 +400,16 @@ describe("one credential, many sites", () => {
     const forA = bindToHostname(credential, "a.example")
     const forB = bindToHostname(credential, "b.example")
 
-    const siteA = createPublisher({ publisherId: "pub_a", hostnames: "a.example", publicKey: authority.publicKey })
-    const siteB = createPublisher({ publisherId: "pub_b", hostnames: "b.example", publicKey: authority.publicKey })
+    const siteA = createPublisher({
+      publisherId: "zapub_7Fq2xR9nKdW3mB6tYp1sVzAe",
+      hostnames: "a.example",
+      publicKey: authority.publicKey,
+    })
+    const siteB = createPublisher({
+      publisherId: "zapub_7Fq2xR9nKdW3mB6tYp1sVzAe",
+      hostnames: "b.example",
+      publicKey: authority.publicKey,
+    })
 
     expect((await siteA.verify(forA)).subscriber).toBe(true)
     expect((await siteB.verify(forB)).subscriber).toBe(true)

@@ -11,7 +11,7 @@ let authority: Authority
 
 function build(overrides: Partial<Parameters<typeof createPublisher>[0]> = {}): Publisher {
   return createPublisher({
-    publisherId: "pub_cache",
+    publisherId: "zapub_7Fq2xR9nKdW3mB6tYp1sVzAe",
     hostnames: HOSTNAME,
     publicKey: authority.publicKey,
     ...overrides,

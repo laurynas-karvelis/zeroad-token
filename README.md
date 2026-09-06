@@ -90,7 +90,7 @@ Returns an object you keep for the life of the process:
 
 |                                         |                                                                |
 | :-------------------------------------- | :------------------------------------------------------------- |
-| `publisher.header`                      | `["Better-Web-Publisher", "pub_...; v=1"]`, ready to spread    |
+| `publisher.header`                      | `["Better-Web-Publisher", "zapub_..."]`, ready to spread       |
 | `publisher.headerName` / `.headerValue` | the same, separately                                           |
 | `publisher.tokenHeaderName`             | `"Better-Web-Token"`                                           |
 | `publisher.tokenHeaderNameLowercase`    | `"better-web-token"`, how Node and Fastify key request headers |
@@ -143,7 +143,7 @@ Worth logging. Most of these are ordinary; two are not.
 `AUTHORITY_PUBLIC_KEY`, `PROTOCOL_VERSION`, `TOKEN_BYTES`, `TOKEN_CHARACTERS`, `DEFAULT_CACHE_OPTIONS`,
 `canonicalHostname()`, `parsePublisherHeader()`, and the `VerificationResult`, `SubscriberResult`,
 `NonSubscriberResult`, `Plan`, `Rejected`, `CacheOptions`, `CacheStats`, `Publisher`,
-`PublisherOptions`, `PublisherHeader` types.
+`PublisherOptions` types.
 
 This package **only verifies**. Nothing here can mint a token - that requires a private key that never
 leaves the platform.
