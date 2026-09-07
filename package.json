@@ -45,18 +45,31 @@
     "bun": ">=1.1.0",
     "deno": ">=2.0.0"
   },
-  "main": "dist/index.js",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist/*.js",
+    "dist/*.cjs",
     "dist/*.d.ts",
     "SKILLS.md"
   ],
   "scripts": {
     "prettier": "prettier . --write",
-    "build:esm": "bun build ./src/index.ts --outdir ./dist --target=node",
+    "build:esm": "bun build ./src/index.ts --outfile ./dist/index.js --target=node --format=esm",
+    "build:cjs": "bun build ./src/index.ts --outfile ./dist/index.cjs --target=node --format=cjs",
     "build:types": "tsc --emitDeclarationOnly",
-    "build": "rm -rf ./dist && bun run build:esm && bun run build:types",
+    "build": "rm -rf ./dist && bun run build:esm && bun run build:cjs && bun run build:types",
     "test": "bun test ./src",
     "test:smoke": "bun run build && node smoke-tests/import.mjs && node smoke-tests/require.cjs",
     "lint:fix": "biome check . --write",

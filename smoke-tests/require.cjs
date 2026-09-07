@@ -1,14 +1,14 @@
 const assert = require("node:assert")
-const { createPublisher, PLAN, PUBLISHER_HEADER, REJECTED, TOKEN_HEADER } = require("../dist/index.js")
+const { createPublisher, PLAN, PUBLISHER_HEADER, REJECTED, TOKEN_HEADER } = require("../dist/index.cjs")
 
 ;(async () => {
   const publisher = createPublisher({
-    publisherId: "pub_smoke",
+    publisherId: "zapub_abcdefghijklmnopqrstuvwx",
     hostnames: "example.com",
   })
 
   assert.equal(publisher.headerName, PUBLISHER_HEADER)
-  assert.equal(publisher.headerValue, "pub_smoke; v=1")
+  assert.equal(publisher.headerValue, "zapub_abcdefghijklmnopqrstuvwx")
   assert.equal(publisher.tokenHeaderName, TOKEN_HEADER)
   assert.equal(PLAN.FREEDOM, 1)
 
