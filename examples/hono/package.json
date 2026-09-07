@@ -10,7 +10,7 @@
   "dependencies": {
     "@zeroad.network/token": "^1.0.0",
     "eta": "^4.5.1",
-    "hono": "^4.13.5"
+    "hono": "^4.13.7"
   },
   "engines": {
     "node": ">=16.0.0",
