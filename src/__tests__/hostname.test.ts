@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { canonicalHostname } from "../hostname"
+import { canonicalHostname, wwwVariants } from "../hostname"
 
 describe("canonicalHostname", () => {
   test.each([
@@ -31,5 +31,15 @@ describe("canonicalHostname", () => {
 
   test("keeps www distinct from the apex domain", () => {
     expect(canonicalHostname("www.example.com")).not.toBe(canonicalHostname("example.com"))
+  })
+})
+
+describe("wwwVariants", () => {
+  test("pairs an apex with its www sibling", () => {
+    expect(wwwVariants("example.com")).toEqual(["example.com", "www.example.com"])
+  })
+
+  test("pairs a www host with its apex sibling", () => {
+    expect(wwwVariants("www.example.com")).toEqual(["www.example.com", "example.com"])
   })
 })

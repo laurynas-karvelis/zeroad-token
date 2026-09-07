@@ -1,7 +1,7 @@
 import { type CacheOptions, type CacheStats, createResultCache } from "./cache"
 import { AUTHORITY_PUBLIC_KEY, PUBLISHER_HEADER, TOKEN_HEADER, TOKEN_HEADER_LOWERCASE } from "./constants"
 import { rawPublicKeyFromSpkiBase64 } from "./ed25519"
-import { canonicalHostname } from "./hostname"
+import { canonicalHostname, wwwVariants } from "./hostname"
 import { encodePublisherHeader } from "./publisher-header"
 import { REJECTED } from "./rejection"
 import { TOKEN_CHARACTERS } from "./token"
@@ -14,10 +14,13 @@ export type PublisherOptions = {
   /**
    * Every hostname this publisher serves, e.g. `"example.com"` or `["example.com", "www.example.com"]`.
    *
-   * This is an allowlist, and it is required on purpose. Tokens are bound to a hostname, so verifying
+   * This is a whitelist, and it is required on purpose. Tokens are bound to a hostname, so verifying
    * against whatever arrived in the `Host` header would mean verifying against an attacker-controlled
    * string: anybody could bind a token to a domain they own, send it with `Host: that-domain.example`,
    * and be admitted as a subscriber. Listing the hostnames here removes that possibility entirely.
+   *
+   * Each entry also admits its `www.` sibling, so listing `example.com` covers `www.example.com` and
+   * vice versa - one less thing to trip over when a site serves both.
    */
   hostnames: string | string[]
 
@@ -51,7 +54,7 @@ export type Publisher = {
    * Verifies a visitor's token against one of this publisher's hostnames.
    *
    * The hostname may be omitted when exactly one was configured. Pass it explicitly when serving
-   * several - `request.headers.host` is fine here, since a value outside the allowlist is rejected
+   * several - `request.headers.host` is fine here, since a value outside the whitelist is rejected
    * rather than trusted.
    */
   verify(token: string | string[] | null | undefined, hostname?: string): Promise<VerificationResult>
@@ -90,7 +93,10 @@ export function createPublisher(options: PublisherOptions): Publisher {
     throw new Error('At least one hostname must be provided, e.g. `hostnames: "example.com"`')
   }
 
-  const allowed = new Set(hostnames)
+  // The whitelist admits each configured host and its `www` sibling, so a publisher serving both the
+  // apex and its `www` need list only one. Membership widens; the signature is still checked against
+  // the exact host the request arrived on (`target` below), never a rewritten one.
+  const allowed = new Set(hostnames.flatMap(wwwVariants))
   const soleHostname = hostnames.length === 1 ? hostnames[0] : undefined
 
   const authorityPublicKey = rawPublicKeyFromSpkiBase64(options.publicKey ?? AUTHORITY_PUBLIC_KEY)

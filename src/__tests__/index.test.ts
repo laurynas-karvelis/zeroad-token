@@ -22,6 +22,7 @@ const EXPECTED_EXPORTS = [
   "createPublisher",
   "encodePublisherHeader",
   "parsePublisherHeader",
+  "suppressProtocolWarnings",
 ].sort()
 
 describe("public API", () => {

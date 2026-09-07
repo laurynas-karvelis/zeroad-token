@@ -33,7 +33,7 @@ import { createPublisher } from "@zeroad.network/token"
 // Once, at startup. Never per request - it parses a key and owns the cache.
 const publisher = createPublisher({
   publisherId: process.env.ZERO_AD_PUBLISHER_ID!,
-  hostnames: ["example.com", "www.example.com"],
+  hostnames: "example.com", // covers www.example.com too; pass a string[] for other hosts
 })
 
 // Per request, in global middleware:
@@ -97,8 +97,8 @@ export async function middleware(request: NextRequest) {
 
 | Option                  | Required | Default      | Notes                                                                |
 | :---------------------- | :------- | :----------- | :------------------------------------------------------------------- |
-| `publisherId`           | yes      | -            | 1-128 printable ASCII, no spaces. Throws otherwise.                  |
-| `hostnames`             | yes      | -            | `string \| string[]`. Allowlist. Scheme, port and path are stripped. |
+| `publisherId`           | yes      | -            | `zapub_` followed by exactly 24 alphanumerics. Throws otherwise.     |
+| `hostnames`             | yes      | -            | `string \| string[]`. Whitelist; an apex covers its `www`. Scheme, port and path are stripped. |
 | `publicKey`             | no       | platform key | Staging and tests only.                                              |
 | `clockToleranceSeconds` | no       | `60`         |                                                                      |
 | `cache`                 | no       | on           | `false`, `true`, or `Partial<CacheOptions>`.                         |
@@ -128,9 +128,15 @@ export async function middleware(request: NextRequest) {
 `PLAN`: `{ FREEDOM: 1 }`. One plan exists. The field is a byte, so more can be added without a format
 change - treat an unrecognised plan as not entitled rather than as an error.
 
-Also exported: `PLAN_NAME`, `PUBLISHER_HEADER`, `TOKEN_HEADER`, `TOKEN_HEADER_LOWERCASE`,
-`AUTHORITY_PUBLIC_KEY`, `PROTOCOL_VERSION`, `TOKEN_BYTES`, `TOKEN_CHARACTERS`, `DEFAULT_CACHE_OPTIONS`,
-`canonicalHostname()`, `parsePublisherHeader()`.
+Also exported: `PLAN_NAME`, `PUBLISHER_HEADER`, `PUBLISHER_ID_SCHEME`, `TOKEN_HEADER`,
+`TOKEN_HEADER_LOWERCASE`, `AUTHORITY_PUBLIC_KEY`, `PROTOCOL_VERSION`, `TOKEN_BYTES`, `TOKEN_CHARACTERS`,
+`DEFAULT_CACHE_OPTIONS`, `canonicalHostname()`, `encodePublisherHeader()`, `parsePublisherHeader()`,
+`suppressProtocolWarnings()`.
+
+`suppressProtocolWarnings(suppressed = true)` silences the one-off `console.warn` emitted when a token
+arrives with a protocol version newer than this build understands (still rejected as
+`unsupported_version`). Call it once at startup only to quiet a staged rollout or version-feeding tests
+- never to paper over the real signal, which is that an upgrade is overdue.
 
 ---
 
@@ -142,7 +148,8 @@ Also exported: `PLAN_NAME`, `PUBLISHER_HEADER`, `TOKEN_HEADER`, `TOKEN_HEADER_LO
 - Set `Better-Web-Publisher` on every response, including ones where no token arrived. It is how the
   extension discovers the site takes part.
 - Pass the request's host to `verify()` when serving more than one hostname.
-- List `www` and apex separately if you serve both. They are different hosts and are not folded.
+- Listing an apex admits its `www` sibling and vice versa, so a site serving both needs only one in
+  the list. The signature is still checked against the exact host each request arrives on.
 - Log `wrong_hostname` and `forged` counts. Both mean somebody is attacking, not misconfiguring.
 
 **Do not**
@@ -210,7 +217,7 @@ language ports should be checked against it.
 | All `missing`                    | Normal - only subscribers send a token. Verify `Better-Web-Publisher` is on responses. |
 | All `forged`                     | A `publicKey` override left over from staging.                                         |
 | All `unknown_hostname`           | Host not in `hostnames`. Log `visitor.hostname` to see what arrived; check the proxy.  |
-| `wrong_hostname` from real users | `www` versus apex. List both.                                                          |
+| `wrong_hostname` from real users | Rare - `www`/apex are folded. Suspect token replay, or a proxy rewriting `Host`.        |
 | `unsupported_version`            | Newer token format. Upgrade the package.                                               |
 | `expired` in bursts              | Server clock drift. Raise `clockToleranceSeconds`, then fix NTP.                       |
 | Throws "several hostnames"       | Multiple hosts configured, none passed to `verify()`.                                  |

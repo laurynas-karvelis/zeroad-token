@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test"
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test"
 import { generateKeyPairSync, randomBytes, sign } from "node:crypto"
 import { nodeCryptoVerifier, useVerifier, verifierFromNodeCrypto, verifyEd25519, webCryptoVerifier } from "../ed25519"
 import { createPublisher, type Publisher } from "../publisher"
@@ -11,6 +11,7 @@ import {
   TOKEN_BYTES,
   TOKEN_CHARACTERS,
 } from "../token"
+import { suppressProtocolWarnings } from "../version-warning"
 import { type Authority, bindToHostname, createAuthority, issueCredential, mintToken } from "./__fixtures__/authority"
 
 const HOSTNAME = "example.com"
@@ -177,6 +178,11 @@ describe("degenerate cryptographic material", () => {
 })
 
 describe("fuzzing", () => {
+  // Random version bytes trip the future-version warning thousands of times; the verdicts are what
+  // matter here, not the log line, so keep the output readable.
+  beforeAll(() => suppressProtocolWarnings())
+  afterAll(() => suppressProtocolWarnings(false))
+
   test("no random input ever produces a subscriber, and verify never throws", async () => {
     const publisher = build(createAuthority())
 
@@ -232,6 +238,11 @@ describe("fuzzing", () => {
 })
 
 describe("oversized headers stay cheap", () => {
+  // The repeated filler token decodes to an unsupported version, warned on every call - silence it so
+  // the timing loop does not bury the output.
+  beforeAll(() => suppressProtocolWarnings())
+  afterAll(() => suppressProtocolWarnings(false))
+
   test("a huge header costs no more to reject than a normal one", async () => {
     // A token is always exactly `TOKEN_CHARACTERS` long, and rejecting on that before decoding is what
     // keeps a flood of large headers from turning into a flood of large allocations. Measured against

@@ -113,7 +113,7 @@ describe("verify - accepting a genuine token", () => {
     expect(www.subscriber).toBe(true)
   })
 
-  test("does not fold www into the apex domain", async () => {
+  test("verifies against the exact host, so a www-bound token does not pass on the apex", async () => {
     const multi = build({ hostnames: ["example.com", "www.example.com"] })
     const result = await multi.verify(mintToken(authority, "www.example.com"), "example.com")
 
@@ -121,6 +121,20 @@ describe("verify - accepting a genuine token", () => {
       subscriber: false,
       reason: REJECTED.WRONG_HOSTNAME,
     })
+  })
+
+  test("listing the apex admits the www sibling", async () => {
+    const apexOnly = build({ hostnames: "example.com" })
+    const result = await apexOnly.verify(mintToken(authority, "www.example.com"), "www.example.com")
+
+    expect(result.subscriber).toBe(true)
+  })
+
+  test("listing the www admits the apex sibling", async () => {
+    const wwwOnly = build({ hostnames: "www.example.com" })
+    const result = await wwwOnly.verify(mintToken(authority, "example.com"), "example.com")
+
+    expect(result.subscriber).toBe(true)
   })
 })
 
@@ -286,7 +300,7 @@ describe("verify - attacks the two-tier binding is meant to stop", () => {
   })
 
   test("a token from a different origin is not admitted by spoofing the Host header", async () => {
-    // The allowlist is the whole defence here: an attacker binds a token to a domain they own and
+    // The whitelist is the whole defence here: an attacker binds a token to a domain they own and
     // sends it with a Host header naming that domain
     const attackerToken = mintToken(authority, "attacker.example")
 

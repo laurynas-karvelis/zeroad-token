@@ -1,6 +1,7 @@
 import { fromBase64Url } from "./base64"
 import { PLAN, type Plan, PROTOCOL_VERSION } from "./constants"
 import { RAW_PUBLIC_KEY_BYTES, SIGNATURE_BYTES } from "./ed25519"
+import { warnIfProtocolAhead } from "./version-warning"
 
 /**
  * Token wire format, version 1 - 174 bytes, 232 base64url characters.
@@ -75,7 +76,10 @@ export function readToken(token: string): TokenBytes | LayoutFailure {
   const bytes = fromBase64Url(token)
   if (!bytes || bytes.length !== TOKEN_BYTES) return "malformed"
 
-  if (bytes[VERSION_OFFSET] !== PROTOCOL_VERSION) return "unsupported_version"
+  if (bytes[VERSION_OFFSET] !== PROTOCOL_VERSION) {
+    warnIfProtocolAhead(bytes[VERSION_OFFSET])
+    return "unsupported_version"
+  }
 
   const plan = bytes[PLAN_OFFSET]
   if (!KNOWN_PLANS.has(plan)) return "malformed"

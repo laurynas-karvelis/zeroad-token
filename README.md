@@ -38,12 +38,13 @@ import { createPublisher } from "@zeroad.network/token"
 
 export const publisher = createPublisher({
   publisherId: process.env.ZERO_AD_PUBLISHER_ID,
-  hostnames: ["example.com", "www.example.com"],
+  hostnames: "example.com", // covers www.example.com too; pass a string[] for other hosts
 })
 ```
 
 `hostnames` is every host you serve. It is required, and it matters - see
-[why hostnames are an allowlist](#why-hostnames-are-an-allowlist).
+[why hostnames are a whitelist](#why-hostnames-are-a-whitelist). Listing an apex covers its `www`
+(and vice versa), so `["example.com"]` already admits `www.example.com`.
 
 ### 3. Wire up one middleware
 
@@ -80,8 +81,8 @@ repository.
 
 | Option                  | Type                 | Default      |                                                              |
 | :---------------------- | :------------------- | :----------- | :----------------------------------------------------------- |
-| `publisherId`           | `string`             | -            | From your dashboard. 1-128 printable ASCII characters.       |
-| `hostnames`             | `string \| string[]` | -            | Every host you serve. Ports, schemes and paths are stripped. |
+| `publisherId`           | `string`             | -            | From your dashboard. `zapub_` followed by 24 alphanumerics.  |
+| `hostnames`             | `string \| string[]` | -            | Every host you serve; an apex covers its `www`. Ports, schemes and paths are stripped. |
 | `publicKey`             | `string`             | platform key | Override for staging and tests. Leave alone in production.   |
 | `clockToleranceSeconds` | `number`             | `60`         | Slack on expiry, for servers whose clocks drift.             |
 | `cache`                 | `boolean \| object`  | on           | See [caching](#caching).                                     |
@@ -104,7 +105,7 @@ Takes the raw header value - `string`, `string[]` (Node hands back an array for 
 `null` or `undefined`. Never throws on bad input; a junk token is a result, not an exception.
 
 The hostname may be omitted when exactly one was configured. Pass `request.headers.host` when you
-serve several - a host outside your allowlist is rejected, never trusted.
+serve several - a host outside your whitelist is rejected, never trusted.
 
 The result is a discriminated union, so TypeScript gives you the right fields in each branch:
 
@@ -113,7 +114,7 @@ const visitor = await publisher.verify(token, host)
 
 if (visitor.subscriber) {
   visitor.plan // PLAN.FREEDOM
-  visitor.planName // "freedom"
+  visitor.planName // "Freedom"
   visitor.expiresAt // Date
 } else {
   visitor.reason // REJECTED.*
@@ -131,19 +132,25 @@ Worth logging. Most of these are ordinary; two are not.
 | :-------------------- | :----------------------------------------------- | :------------------------------- |
 | `missing`             | No token header. Most of your traffic.           | yes                              |
 | `malformed`           | Not a well-formed token.                         | yes                              |
-| `unsupported_version` | A newer token format. Upgrade this package.      | yes                              |
+| `unsupported_version` | A newer token format. Upgrade this package.      | yes, but see below               |
 | `expired`             | Genuine, but past its expiry.                    | yes                              |
-| `unknown_hostname`    | The host asked for is not in your allowlist.     | check your config                |
+| `unknown_hostname`    | The host asked for is not in your whitelist.     | check your config                |
 | `wrong_hostname`      | A genuine token minted for **a different site**. | **somebody is replaying tokens** |
 | `forged`              | Not signed by Zero Ad Network.                   | **somebody is minting tokens**   |
 
+The first time a token arrives whose version is newer than this package understands, it is rejected as
+`unsupported_version` **and** a one-off `console.warn` tells you an upgrade is due - the network has
+moved to a token format this build predates, and until you upgrade you will turn those subscribers
+away. If you would rather not see it - during a staged rollout, or in tests that feed such tokens on
+purpose - call `suppressProtocolWarnings()` once at startup.
+
 ### Also exported
 
-`PLAN`, `PLAN_NAME`, `REJECTED`, `PUBLISHER_HEADER`, `TOKEN_HEADER`, `TOKEN_HEADER_LOWERCASE`,
-`AUTHORITY_PUBLIC_KEY`, `PROTOCOL_VERSION`, `TOKEN_BYTES`, `TOKEN_CHARACTERS`, `DEFAULT_CACHE_OPTIONS`,
-`canonicalHostname()`, `parsePublisherHeader()`, and the `VerificationResult`, `SubscriberResult`,
-`NonSubscriberResult`, `Plan`, `Rejected`, `CacheOptions`, `CacheStats`, `Publisher`,
-`PublisherOptions` types.
+`PLAN`, `PLAN_NAME`, `REJECTED`, `PUBLISHER_HEADER`, `PUBLISHER_ID_SCHEME`, `TOKEN_HEADER`,
+`TOKEN_HEADER_LOWERCASE`, `AUTHORITY_PUBLIC_KEY`, `PROTOCOL_VERSION`, `TOKEN_BYTES`, `TOKEN_CHARACTERS`,
+`DEFAULT_CACHE_OPTIONS`, `canonicalHostname()`, `encodePublisherHeader()`, `parsePublisherHeader()`,
+`suppressProtocolWarnings()`, and the `VerificationResult`, `SubscriberResult`, `NonSubscriberResult`,
+`Plan`, `Rejected`, `CacheOptions`, `CacheStats`, `Publisher`, `PublisherOptions` types.
 
 This package **only verifies**. Nothing here can mint a token - that requires a private key that never
 leaves the platform.
@@ -158,7 +165,7 @@ a 0.33 microsecond map lookup. It is on by default and there is rarely a reason 
 
 ```ts
 createPublisher({
-  publisherId: "pub_...",
+  publisherId: "zapub_...",
   hostnames: "example.com",
   cache: { ttl: 600_000, maxSize: 5000 }, // or `cache: false`
 })
@@ -237,14 +244,16 @@ identifier _for your site alone_ for that long - inherent to any multi-use token
 ever sees the same one. And unlinkability from the platform itself rests on us not retaining which
 account we signed which key for, which is a policy commitment, not a mathematical one.
 
-### Why hostnames are an allowlist
+### Why hostnames are a whitelist
 
 `hostnames` is required, and `verify()` will not fall back to whatever arrived in the `Host` header,
-because tokens are bound to a hostname and `Host` is set by the client. Without the allowlist an
+because tokens are bound to a hostname and `Host` is set by the client. Without the whitelist an
 attacker could bind a token to a domain they control, send it with `Host: that-domain.example`, and be
 admitted as a subscriber. Listing your hosts removes the possibility.
 
-Note that `www.example.com` and `example.com` are different hosts. If you serve both, list both.
+`www.example.com` and `example.com` are technically different hosts, but listing either admits both -
+they are the same domain under one owner - so a site that serves both needs only one of them in the
+list. The signature is still checked against the exact host each request arrives on.
 
 ---
 
@@ -280,10 +289,13 @@ not benefit from leaving the main thread. WebCrypto is the fallback, so edge run
 **Every visitor comes back `missing`.** Expected - only subscribers send a token. Confirm the pipe
 works by checking `Better-Web-Publisher` appears on your responses (`curl -sI https://your-site`).
 
-**`unknown_hostname`.** The host being verified is not in `hostnames`. Log `visitor.hostname` to see
-what actually arrived; a reverse proxy may be passing something you did not expect.
+**`unknown_hostname`.** The host being verified is not in `hostnames` (the `www`/apex sibling of a
+listed host counts as listed). Log `visitor.hostname` to see what actually arrived; a reverse proxy
+may be passing something you did not expect.
 
-**`wrong_hostname` from real visitors.** Usually `www` versus apex. List both.
+**`wrong_hostname` from real visitors.** Should be rare - `www` and apex are folded together, so this
+is not the usual `www`-versus-apex slip. A steady stream means tokens are being replayed from another
+site; a trickle is usually a proxy rewriting `Host` to something the token was not bound to.
 
 **`forged` for everybody.** A `publicKey` override left over from staging.
 
