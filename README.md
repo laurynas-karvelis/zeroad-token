@@ -1,7 +1,7 @@
 # @zeroad.network/token
 
 Verify [Zero Ad Network](https://zeroad.network) subscriber tokens in your backend. Offline, in about
-80 microseconds cold and a third of a microsecond cached, with no dependencies and no calls back to us.
+80us cold and 0.16us cached, with no dependencies and no calls back to us.
 
 ```bash
 npm install @zeroad.network/token
@@ -161,7 +161,7 @@ leaves the platform.
 
 A subscriber's token stays the same all day, so a returning visitor sends bytes you have already
 checked. Verifying once and remembering the answer turns 80 microseconds of elliptic curve maths into
-a 0.33 microsecond map lookup. It is on by default and there is rarely a reason to touch it.
+a 0.16 microsecond map lookup. It is on by default and there is rarely a reason to touch it.
 
 ```ts
 createPublisher({
@@ -259,13 +259,13 @@ list. The signature is still checked against the exact host each request arrives
 
 ## Performance
 
-Measured on Bun 1.3, Apple Silicon, single core:
+Measured on Bun 1.4, Apple Silicon, single core, via `bun run benchmarks/verify.ts`:
 
-|                               |                                                    |
-| :---------------------------- | :------------------------------------------------- |
-| Cold verification, end to end | 80us, about 12,400/s                               |
-| Cached verdict                | 0.33us, about 3,000,000/s                          |
-| Malformed token               | about 1us, rejected on length before it is decoded |
+|                               |                                                     |
+| :---------------------------- | :-------------------------------------------------- |
+| Cold verification, end to end | 78us, about 12,900/s                                |
+| Cached verdict                | 0.16us, about 6,200,000/s                           |
+| Malformed token               | 0.7us, rejected on length before it is decoded      |
 
 `node:crypto`'s synchronous verify is used where available. It is faster than dispatching to the
 libuv threadpool (36.7us against 46.0us) and faster than WebCrypto (47.3us), and work that short does
