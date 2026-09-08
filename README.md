@@ -66,9 +66,8 @@ if (response.locals.visitor.subscriber) {
 }
 ```
 
-That is the whole integration. Working examples for
-[Express](./examples/express), [Fastify](./examples/fastify) and [Hono](./examples/hono) live in this
-repository.
+That is the whole integration. Copy-paste Hono and Express middleware, and the rest of the publisher
+guide, live at [zeroad.network/docs/site-integration/remove-ads/node](https://zeroad.network/docs/site-integration/remove-ads/node).
 
 > Set `Better-Web-Publisher` even on pages where you never read a token. It is how the extension
 > discovers that your site takes part at all, and how visits get attributed to you.
